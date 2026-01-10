@@ -206,276 +206,97 @@ async def select_next_question(
 
 ---
 
-## Service 2: The Tutor (Probabilistic LLM)
+## Service 2: The Socrates Agent (Claude-Powered AI Tutor)
+
+> **Full Specification**: See [SOCRATES_AGENT.md](./SOCRATES_AGENT.md) for complete implementation details.
 
 ### Role
-The Tutor is the **persona and diagnostic engine**. It uses an LLM to provide personalized, encouraging feedback in the voice of Socrates. This is the only service that uses probabilistic (LLM) logic.
+The Socrates Agent is an **autonomous AI tutor** powered by Claude via the Anthropic SDK. Unlike a simple LLM wrapper, Socrates is a true agent that reasons about student performance, decides which tools to use, and crafts personalized educational responses.
 
-### Responsibilities
+### Key Difference from Traditional Approach
 
-1. **Answer Grading**: Validate student responses (fuzzy matching for free text)
-2. **Failure Diagnosis**: Distinguish K-failure (memory slip) from W-failure (logic gap)
-3. **Feedback Generation**: Create personalized responses in Socrates' voice
-4. **Socratic Questioning**: For W-failures, generate guiding questions
-5. **Celebration**: Make correct answers feel rewarding
+**Old (Rule-Based):**
+```python
+if wrong and question_type == "knowledge":
+    return get_mnemonic()  # Always the same response
+```
 
-### LLM Configuration
+**New (Agentic):**
+```python
+# Socrates autonomously decides what to do
+response = socrates_agent.respond_to_answer(context, question, answer)
+# Socrates might:
+# 1. Check student history to see if this is a pattern
+# 2. Analyze why they picked that specific wrong answer
+# 3. Decide between mnemonic, explanation, or Socratic question
+# 4. Record a misconception if pattern detected
+```
+
+### Anthropic SDK Integration
 
 ```python
-# backend/services/tutor.py
+import anthropic
 
-TUTOR_SYSTEM_PROMPT = """
-You are Socrates, a wise and encouraging tutor helping 5th-grade students learn American History.
+class SocratesAgent:
+    def __init__(self):
+        self.client = anthropic.Anthropic()
+        self.model = "claude-sonnet-4-20250514"
 
-## Your Personality
-- You are warm, patient, and genuinely excited about history
-- You speak to students as equals capable of great thinking
-- You never make students feel bad for mistakes - mistakes are how we learn
-- You use simple, age-appropriate language (5th grade level)
-- You occasionally share interesting historical tidbits to spark curiosity
+    async def respond_to_answer(self, context, question, answer, is_correct):
+        messages = [{"role": "user", "content": self._build_context(...)}]
 
-## Your Teaching Method
-- For KNOWLEDGE questions (memorization): When wrong, provide a helpful memory trick
-- For WISDOM questions (understanding): When wrong, NEVER give the answer directly
-  Instead, ask a guiding question that leads them toward the insight
+        # Agentic loop - Claude may call tools multiple times
+        while True:
+            response = self.client.messages.create(
+                model=self.model,
+                system=SOCRATES_SYSTEM_PROMPT,
+                tools=SOCRATES_TOOLS,
+                messages=messages
+            )
+
+            if response.stop_reason == "tool_use":
+                # Execute tools Claude requested
+                tool_results = await self._process_tool_calls(response.content)
+                messages.append({"role": "assistant", "content": response.content})
+                messages.append({"role": "user", "content": tool_results})
+            else:
+                return self._extract_feedback(response.content)
+```
+
+### Tools Available to Socrates
+
+| Tool | Purpose |
+|------|---------|
+| `get_student_history` | Check past performance to personalize response |
+| `fetch_mnemonic` | Get memory trick for Knowledge questions |
+| `get_socratic_hints` | Get progressive guiding questions for Wisdom questions |
+| `analyze_distractor` | Understand why the student chose a specific wrong answer |
+| `record_misconception` | Track patterns for parent dashboard insights |
+| `suggest_difficulty_change` | Recommend tier adjustment to Orchestrator |
+
+### System Prompt Overview
+
+```python
+SOCRATES_SYSTEM_PROMPT = """
+You are Socrates, a wise and encouraging tutor helping 5th-grade students
+learn American History.
+
+## Your Core Philosophy
+- Celebrate effort, not just correctness
+- For Knowledge gaps: Provide memorable tricks
+- For Wisdom gaps: NEVER give answers directly; ask guiding questions
+- Recognize patterns: Use tools to check if this is a recurring struggle
 
 ## Your Voice
-- Use short, encouraging sentences
-- Avoid being preachy or lecturing
-- Show genuine enthusiasm: "Oh, that's such a great question to think about!"
-- Celebrate effort, not just correctness: "I can see you're really thinking about this!"
-
-## What You Must NEVER Do
-- Give away answers to Wisdom questions directly
-- Be condescending or use baby talk
-- Use complex vocabulary inappropriate for 5th grade
-- Provide feedback longer than 3-4 sentences
-"""
-
-FEEDBACK_GENERATION_PROMPT = """
-## Context
-Student: {student_name}
-Question Type: {question_type} (Knowledge = memorization, Wisdom = understanding)
-Question: {question_text}
-Correct Answer: {correct_answer}
-Student's Answer: {student_answer}
-Is Correct: {is_correct}
-
-## If Wrong - Additional Context
-Distractor Info: {distractor_info}
-{mnemonic_or_hint}
-
-## Your Task
-Generate feedback in Socrates' voice. Follow these rules:
-
-IF CORRECT:
-- Celebrate briefly (1 sentence)
-- Optionally add an interesting related fact
-- Keep it short and energizing
-
-IF WRONG + KNOWLEDGE QUESTION:
-- Acknowledge the attempt warmly
-- Provide the memory trick/mnemonic
-- Do NOT ask them to try again - just help them remember
-
-IF WRONG + WISDOM QUESTION:
-- Acknowledge their thinking
-- Ask ONE guiding Socratic question from the hints provided
-- Do NOT reveal the answer
-- Encourage them to think about it
-
-Respond with JSON:
-{{
-  "feedback_text": "Your message to the student",
-  "feedback_type": "celebration|mnemonic|socratic_hint|explanation",
-  "avatar_emotion": "happy|encouraging|thinking|curious",
-  "follow_up_question": null or "The Socratic question to ask"
-}}
+- Warm and encouraging, like a favorite teacher
+- Simple, age-appropriate language (5th grade level)
+- Short sentences—don't lecture
+- Shows genuine enthusiasm
+...
 """
 ```
 
-### Class Design
-
-```python
-from enum import Enum
-from dataclasses import dataclass
-from typing import Optional
-import json
-
-class FeedbackType(Enum):
-    CELEBRATION = "celebration"
-    MNEMONIC = "mnemonic"
-    SOCRATIC_HINT = "socratic_hint"
-    EXPLANATION = "explanation"
-
-class AvatarEmotion(Enum):
-    HAPPY = "happy"
-    ENCOURAGING = "encouraging"
-    THINKING = "thinking"
-    CURIOUS = "curious"
-
-@dataclass
-class GradingResult:
-    is_correct: bool
-    confidence: float  # For fuzzy matching
-    matched_answer: Optional[str] = None  # What we matched against
-
-@dataclass
-class TutorFeedback:
-    is_correct: bool
-    feedback_type: FeedbackType
-    feedback_text: str
-    avatar_emotion: AvatarEmotion
-    follow_up_question: Optional[str] = None
-    xp_earned: int = 0
-    streak_bonus: bool = False
-
-
-class TutorService:
-    """
-    The Tutor: LLM-powered personalized feedback.
-
-    Design Principles:
-    - Low temperature (0.3) for consistency
-    - Strict persona adherence
-    - Never reveals Wisdom answers
-    """
-
-    def __init__(self, llm_client, librarian: LibrarianService):
-        self.llm = llm_client
-        self.librarian = librarian
-
-    async def grade_answer(
-        self,
-        question_id: str,
-        student_answer: str,  # Option ID for MC, text for free response
-        is_multiple_choice: bool = True
-    ) -> GradingResult:
-        """
-        Determine if the student's answer is correct.
-
-        For multiple choice: Exact match on option ID
-        For free text: Use LLM for fuzzy semantic matching
-        """
-        if is_multiple_choice:
-            # Deterministic - check against DB
-            question_data = await self.librarian.get_question_metadata(question_id)
-            correct_option_id = question_data["correct_option_id"]
-            return GradingResult(
-                is_correct=(student_answer == correct_option_id),
-                confidence=1.0
-            )
-        else:
-            # Fuzzy matching with LLM
-            return await self._fuzzy_grade(question_id, student_answer)
-
-    async def diagnose_failure(
-        self,
-        question_id: str,
-        student_answer: str,
-        question_type: QuestionType
-    ) -> dict:
-        """
-        Analyze why the student got it wrong.
-
-        Returns:
-        {
-            "failure_type": "memory_slip" | "logic_gap" | "careless_error",
-            "distractor_fell_for": {...} or None,
-            "recommended_intervention": "mnemonic" | "socratic_hint"
-        }
-        """
-        # Get info about the wrong answer they chose
-        distractor_info = await self.librarian.get_distractor_info(student_answer)
-
-        if question_type == QuestionType.KNOWLEDGE:
-            return {
-                "failure_type": "memory_slip",
-                "distractor_fell_for": distractor_info,
-                "recommended_intervention": "mnemonic"
-            }
-        else:  # WISDOM
-            return {
-                "failure_type": "logic_gap",
-                "distractor_fell_for": distractor_info,
-                "recommended_intervention": "socratic_hint"
-            }
-
-    async def generate_feedback(
-        self,
-        question_id: str,
-        question_type: QuestionType,
-        is_correct: bool,
-        student_answer: str,
-        diagnosis: Optional[dict] = None,
-        student_name: str = "friend",
-        streak_count: int = 0
-    ) -> TutorFeedback:
-        """
-        Generate personalized feedback in Socrates' voice.
-        """
-        # Gather context
-        question_data = await self.librarian.get_question_metadata(question_id)
-
-        mnemonic_or_hint = ""
-        if not is_correct:
-            if question_type == QuestionType.KNOWLEDGE:
-                mnemonic = await self.librarian.get_mnemonic(question_id)
-                mnemonic_or_hint = f"Memory Trick Available: {mnemonic}" if mnemonic else ""
-            else:
-                hints = await self.librarian.get_socratic_hints(question_id)
-                mnemonic_or_hint = f"Socratic Hints (use level 1 first): {json.dumps(hints)}"
-
-        # Build prompt
-        prompt = FEEDBACK_GENERATION_PROMPT.format(
-            student_name=student_name,
-            question_type=question_type.value,
-            question_text=question_data["question_text"],
-            correct_answer=question_data["correct_answer"],
-            student_answer=student_answer,
-            is_correct=is_correct,
-            distractor_info=json.dumps(diagnosis.get("distractor_fell_for", {})) if diagnosis else "N/A",
-            mnemonic_or_hint=mnemonic_or_hint
-        )
-
-        # Call LLM
-        response = await self.llm.generate(
-            system_prompt=TUTOR_SYSTEM_PROMPT,
-            user_prompt=prompt,
-            temperature=0.3,
-            max_tokens=300
-        )
-
-        result = json.loads(response)
-
-        # Calculate XP
-        xp = self._calculate_xp(is_correct, question_type, streak_count)
-
-        return TutorFeedback(
-            is_correct=is_correct,
-            feedback_type=FeedbackType(result["feedback_type"]),
-            feedback_text=result["feedback_text"],
-            avatar_emotion=AvatarEmotion(result["avatar_emotion"]),
-            follow_up_question=result.get("follow_up_question"),
-            xp_earned=xp,
-            streak_bonus=(streak_count >= 3)
-        )
-
-    def _calculate_xp(
-        self,
-        is_correct: bool,
-        question_type: QuestionType,
-        streak: int
-    ) -> int:
-        """XP calculation with streak bonuses."""
-        if not is_correct:
-            return 5  # Participation points
-
-        base_xp = 10 if question_type == QuestionType.KNOWLEDGE else 15
-        streak_multiplier = 1 + (0.1 * min(streak, 5))  # Max 1.5x
-
-        return int(base_xp * streak_multiplier)
-```
+For complete system prompt, tool definitions, and implementation details, see [SOCRATES_AGENT.md](./SOCRATES_AGENT.md).
 
 ---
 
@@ -566,11 +387,11 @@ class OrchestratorService:
     - Clear end conditions
     """
 
-    def __init__(self, db_session, redis_client, librarian, tutor):
+    def __init__(self, db_session, redis_client, librarian, socrates_agent):
         self.db = db_session
         self.cache = redis_client
         self.librarian = librarian
-        self.tutor = tutor
+        self.socrates = socrates_agent  # The Claude-powered Socrates Agent
 
     async def start_session(
         self,
@@ -650,12 +471,11 @@ class OrchestratorService:
         Process student's answer submission.
 
         1. Load state and validate
-        2. Grade answer via Tutor
-        3. Diagnose failure if wrong
-        4. Generate feedback
-        5. Update streak, hearts, tier
-        6. Check end conditions
-        7. Return feedback and updated state
+        2. Determine correctness (simple DB check)
+        3. Let Socrates Agent handle feedback (agentic reasoning)
+        4. Update streak, hearts, tier
+        5. Check end conditions
+        6. Return feedback and updated state
         """
         state = await self._load_state(session_id)
         question_id = state.current_question_id
@@ -664,29 +484,34 @@ class OrchestratorService:
         question_data = await self.librarian.get_question_metadata(question_id)
         question_type = QuestionType(question_data["question_type"])
 
-        # Grade
-        grading_result = await self.tutor.grade_answer(question_id, answer)
+        # Simple correctness check (deterministic)
+        is_correct = self._check_answer(question_data, answer)
 
-        # Diagnose if wrong
-        diagnosis = None
-        if not grading_result.is_correct:
-            diagnosis = await self.tutor.diagnose_failure(
-                question_id, answer, question_type
-            )
-
-        # Generate feedback
-        feedback = await self.tutor.generate_feedback(
-            question_id=question_id,
-            question_type=question_type,
-            is_correct=grading_result.is_correct,
+        # Let Socrates Agent handle feedback generation (agentic)
+        # Socrates will autonomously decide:
+        # - Whether to check student history
+        # - Whether to fetch mnemonics or hints
+        # - How to phrase the feedback
+        # - Whether to record a misconception
+        feedback = await self.socrates.respond_to_answer(
+            session_context={
+                "session_id": session_id,
+                "student_id": state.student_id,
+                "current_streak": state.current_streak,
+                "hearts_remaining": state.hearts_remaining,
+                "current_tier": state.current_tier
+            },
+            question=question_data,
             student_answer=answer,
-            diagnosis=diagnosis,
-            streak_count=state.current_streak
+            is_correct=is_correct
         )
+
+        # Check if Socrates suggested a difficulty change
+        difficulty_suggestion = await self._get_socrates_difficulty_suggestion(session_id)
 
         # Calculate state changes
         new_state = await self._apply_answer_result(
-            state, grading_result.is_correct, question_type, feedback.xp_earned
+            state, is_correct, question_type, feedback.get("xp_earned", 10)
         )
 
         # Check end conditions

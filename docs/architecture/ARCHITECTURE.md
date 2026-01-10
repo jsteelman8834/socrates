@@ -35,14 +35,25 @@ The Virtual Socratic University is an adaptive, agentic tutoring system that tea
 │         ┌──────────────────────────┼──────────────────────────┐         │
 │         ▼                          ▼                          ▼         │
 │  ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐     │
-│  │   LIBRARIAN     │    │   ORCHESTRATOR  │    │     TUTOR       │     │
-│  │  (Deterministic)│    │  (State Machine)│    │  (LLM-Powered)  │     │
+│  │   LIBRARIAN     │    │   ORCHESTRATOR  │    │ SOCRATES AGENT  │     │
+│  │  (Deterministic)│    │  (State Machine)│    │ (Claude + Tools)│     │
 │  │                 │    │                 │    │                 │     │
-│  │ • Fetch Qs      │    │ • Session State │    │ • Grade Answers │     │
-│  │ • Tag/Categorize│    │ • Streak Logic  │    │ • Diagnose Gaps │     │
-│  │ • Composite Gen │    │ • Difficulty    │    │ • Generate Hints│     │
-│  │ • Hash/Cache    │    │ • Game Flow     │    │ • Persona Voice │     │
-│  └─────────────────┘    └─────────────────┘    └─────────────────┘     │
+│  │ • Fetch Qs      │    │ • Session State │    │ • Anthropic SDK │     │
+│  │ • Tag/Categorize│    │ • Streak Logic  │    │ • Tool Use      │     │
+│  │ • Composite Gen │    │ • Difficulty    │    │ • Autonomous    │     │
+│  │ • Hash/Cache    │    │ • Game Flow     │    │   Reasoning     │     │
+│  └────────┬────────┘    └────────┬────────┘    └────────┬────────┘     │
+│           │                      │                      │              │
+│           └──────────────────────┼──────────────────────┘              │
+│                                  │                                      │
+│                    ┌─────────────▼─────────────┐                       │
+│                    │      TOOL INTERFACE       │                       │
+│                    │  • get_student_history    │                       │
+│                    │  • fetch_mnemonic         │                       │
+│                    │  • get_socratic_hints     │                       │
+│                    │  • analyze_distractor     │                       │
+│                    │  • record_misconception   │                       │
+│                    └───────────────────────────┘                       │
 └─────────────────────────────────────────────────────────────────────────┘
                                     │
                                     ▼
@@ -55,6 +66,56 @@ The Virtual Socratic University is an adaptive, agentic tutoring system that tea
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
+### Socrates Agent Architecture
+
+The Socrates Agent is the core intelligence of the system—a Claude-powered autonomous tutor that reasons about student performance and decides how to respond.
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         SOCRATES AGENT                                   │
+│                                                                          │
+│  ┌────────────────────────────────────────────────────────────────┐    │
+│  │                    CLAUDE (claude-sonnet-4-20250514)                    │    │
+│  │                                                                 │    │
+│  │  System Prompt: Socratic tutor persona, teaching philosophy    │    │
+│  │  Temperature: 0.3 (consistent but not robotic)                 │    │
+│  │  Max Tokens: 1024                                              │    │
+│  └────────────────────────────────────────────────────────────────┘    │
+│                                    │                                     │
+│                          Tool Calls│(autonomous)                        │
+│                                    ▼                                     │
+│  ┌────────────────────────────────────────────────────────────────┐    │
+│  │                         TOOL SUITE                              │    │
+│  │                                                                 │    │
+│  │  ┌──────────────────┐  ┌──────────────────┐                    │    │
+│  │  │ get_student_     │  │ fetch_mnemonic   │                    │    │
+│  │  │ history          │  │                  │                    │    │
+│  │  │                  │  │ Get memory trick │                    │    │
+│  │  │ Check past       │  │ for K questions  │                    │    │
+│  │  │ performance      │  └──────────────────┘                    │    │
+│  │  └──────────────────┘                                          │    │
+│  │                                                                 │    │
+│  │  ┌──────────────────┐  ┌──────────────────┐                    │    │
+│  │  │ get_socratic_    │  │ analyze_         │                    │    │
+│  │  │ hints            │  │ distractor       │                    │    │
+│  │  │                  │  │                  │                    │    │
+│  │  │ Progressive      │  │ Why wrong answer │                    │    │
+│  │  │ guiding Qs       │  │ was chosen       │                    │    │
+│  │  └──────────────────┘  └──────────────────┘                    │    │
+│  │                                                                 │    │
+│  │  ┌──────────────────┐  ┌──────────────────┐                    │    │
+│  │  │ record_          │  │ suggest_         │                    │    │
+│  │  │ misconception    │  │ difficulty_change│                    │    │
+│  │  │                  │  │                  │                    │    │
+│  │  │ Track patterns   │  │ Adaptive         │                    │    │
+│  │  │ for insights     │  │ difficulty       │                    │    │
+│  │  └──────────────────┘  └──────────────────┘                    │    │
+│  └────────────────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+See [SOCRATES_AGENT.md](./SOCRATES_AGENT.md) for complete agent specification.
+
 ---
 
 ## Technology Stack
@@ -63,11 +124,22 @@ The Virtual Socratic University is an adaptive, agentic tutoring system that tea
 | Component | Technology | Rationale |
 |-----------|------------|-----------|
 | Framework | FastAPI | Async support, automatic OpenAPI docs, type hints |
-| State Machine | LangGraph | Complex agent orchestration, built-in state management |
-| LLM Integration | LangChain + Claude/GPT-4 | Abstraction layer for LLM switching |
+| **AI Agent** | **Anthropic Claude SDK** | **Direct Claude API access with native tool use** |
+| Model | Claude claude-sonnet-4-20250514 | Fast, capable, excellent at tool use and reasoning |
 | Database ORM | SQLAlchemy 2.0 | Type-safe, async queries |
 | Caching | Redis | Session state, streak tracking, real-time data |
 | Task Queue | Celery (optional) | Async report generation |
+
+### Anthropic Claude SDK
+```bash
+pip install anthropic
+```
+
+The Socrates Agent uses the Anthropic SDK directly (not via LangChain) to leverage Claude's native capabilities:
+- **Tool Use**: Claude autonomously decides when to call tools
+- **Agentic Loop**: Multi-turn reasoning until task completion
+- **Structured Output**: JSON responses for consistent frontend integration
+- **Low Latency**: Direct API calls without abstraction overhead
 
 ### Frontend (TypeScript)
 | Component | Technology | Rationale |

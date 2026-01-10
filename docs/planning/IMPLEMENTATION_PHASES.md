@@ -105,56 +105,107 @@ This document outlines the phased implementation approach for building the Virtu
 - 90%+ test coverage
 - Performance benchmarks
 
-### 2.2 The Personality Transplant
-**Objective**: Create Socrates' persona and voice.
+### 2.2 Claude SDK Integration
+**Objective**: Set up the Anthropic SDK and basic agent infrastructure.
 
 **Tasks**:
-- Design and test system prompts for the Tutor LLM
-- Create persona guidelines document
-- Implement temperature and token limits
+- Install and configure Anthropic Python SDK (`pip install anthropic`)
+- Set up API key management (environment variables, secrets)
+- Create base `SocratesAgent` class structure
+- Implement the agentic loop pattern:
+  ```python
+  while response.stop_reason == "tool_use":
+      results = execute_tools(response)
+      messages.append(tool_results)
+  ```
+- Set up error handling and fallback responses
+- Configure model parameters (claude-sonnet-4-20250514, temperature=0.3)
+
+**Deliverables**:
+- Working Anthropic SDK integration
+- Base SocratesAgent class
+- Error handling and fallback system
+- API key configuration docs
+
+### 2.3 The Personality Transplant (System Prompt)
+**Objective**: Create Socrates' persona and teaching philosophy.
+
+**Tasks**:
+- Design comprehensive system prompt with:
+  - Socratic personality traits
+  - Teaching philosophy (K vs W approach)
+  - Voice and tone guidelines (5th grade appropriate)
+  - Strict rules (never reveal W answers, etc.)
 - Test persona consistency across many interactions
-- Create fallback templates for when LLM is unavailable
+- Create fallback templates for when API is unavailable
+- Document persona guidelines for future updates
 
 **Deliverables**:
-- Finalized system prompts
-- Persona test results
+- Finalized SOCRATES_SYSTEM_PROMPT
+- Persona consistency test results
 - Fallback response templates
+- Persona guidelines document
 
-### 2.3 The Diagnostic Training
-**Objective**: Teach Socrates to identify failure types.
+### 2.4 Socrates Tool Suite
+**Objective**: Build the tools Socrates can use autonomously.
 
 **Tasks**:
-- Implement `TutorService` class with:
-  - `grade_answer()` - validate responses
-  - `diagnose_failure()` - identify K vs W failure
-  - `generate_feedback()` - create personalized response
-- Build fuzzy matching for free-text answers
-- Create diagnosis rules:
-  - Memory Slip detection (K-failure)
-  - Logic Gap detection (W-failure)
-- Map diagnoses to appropriate interventions
+- Implement tool definitions (JSON schemas):
+  - `get_student_history` - query past performance
+  - `fetch_mnemonic` - retrieve memory tricks
+  - `get_socratic_hints` - get progressive hints
+  - `analyze_distractor` - understand wrong answer choice
+  - `record_misconception` - track learning patterns
+  - `suggest_difficulty_change` - recommend tier adjustments
+- Implement tool handler functions (database queries)
+- Create tool result formatting
+- Test tool execution and result parsing
+- Handle tool errors gracefully
 
 **Deliverables**:
-- Complete Tutor service
-- Diagnosis accuracy tests
-- Sample feedback for each failure type
+- Complete tool suite (6 tools)
+- Tool handler implementations
+- Tool execution tests
+- Error handling for tool failures
 
-### 2.4 The "Distractor" Awareness
-**Objective**: Ensure Socrates understands why wrong answers are wrong.
+### 2.5 Agentic Reasoning Loop
+**Objective**: Enable Socrates to reason and decide autonomously.
 
 **Tasks**:
-- Create distractor analysis integration
-- Build prompts that include distractor context
+- Implement multi-turn tool use loop
+- Build context construction for student interactions
+- Create response extraction and validation
+- Test autonomous decision-making:
+  - Does Socrates check history when appropriate?
+  - Does Socrates choose correct intervention type?
+  - Does Socrates record patterns when detected?
+- Performance optimization (minimize tool calls)
+- Implement response caching where appropriate
+
+**Deliverables**:
+- Complete agentic loop implementation
+- Autonomous reasoning test suite
+- Performance benchmarks (response time)
+- Sample interaction transcripts
+
+### 2.6 Distractor Awareness Testing
+**Objective**: Validate Socrates explains mistakes correctly.
+
+**Tasks**:
 - Test Socrates' ability to explain common confusions:
   - Columbus vs. Vespucci
   - Stamp Act vs. Tea Act
-  - etc.
+  - Cause vs. effect questions
 - Validate explanations are age-appropriate
+- Ensure Socrates uses distractor info from tools
+- Test that W answers are never revealed directly
+- Parent/educator review of feedback quality
 
 **Deliverables**:
-- Distractor-aware feedback generation
+- Distractor-aware feedback validation
 - Sample explanations for all distractor types
-- Parent review of explanation quality
+- Parent review sign-off
+- Quality assurance checklist
 
 ---
 
@@ -407,7 +458,7 @@ This document outlines the phased implementation approach for building the Virtu
 | Phase | Key Milestone | Success Criteria |
 |-------|---------------|------------------|
 | 1 | Content Ready | 80 questions imported, validated, tagged |
-| 2 | Socrates Alive | Tutor generates appropriate feedback for all scenarios |
+| 2 | Socrates Agent Alive | Agent autonomously reasons and provides appropriate feedback using tools |
 | 3 | Classroom Open | Complete learning session playable end-to-end |
 | 4 | Parents Informed | Dashboard shows meaningful insights |
 | 5 | University Open | Real student completes session successfully |
@@ -425,8 +476,9 @@ This document outlines the phased implementation approach for building the Virtu
 
 ### Phase 2 Prerequisites
 - Phase 1 complete
-- LLM API access (Claude or GPT-4)
-- LangChain/LangGraph setup
+- **Anthropic API key** (for Claude access)
+- **Anthropic Python SDK** (`pip install anthropic`)
+- Understanding of Claude tool use patterns
 
 ### Phase 3 Prerequisites
 - Phase 2 complete
@@ -445,12 +497,14 @@ This document outlines the phased implementation approach for building the Virtu
 
 ## Risk Mitigation
 
-### Risk: LLM Quality/Consistency
+### Risk: Claude Agent Quality/Consistency
 **Mitigation**:
-- Low temperature settings (0.3)
-- Extensive prompt engineering
-- Fallback templates for edge cases
-- Human review of sample outputs
+- Low temperature settings (0.3) for consistent persona
+- Comprehensive system prompt with strict rules
+- Tool use for grounded, factual responses (not hallucination)
+- Fallback templates when API unavailable
+- Human review of sample agent interactions
+- Agentic loop timeout to prevent runaway tool calls
 
 ### Risk: Content Quality
 **Mitigation**:

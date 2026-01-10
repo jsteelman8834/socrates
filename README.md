@@ -22,8 +22,9 @@ The Virtual Socratic University distinguishes between **Knowledge** (factual rec
 
 ### Architecture
 - [Architecture Overview](docs/architecture/ARCHITECTURE.md) - System design and technology stack
+- [**Socrates Agent**](docs/architecture/SOCRATES_AGENT.md) - Claude-powered autonomous tutor specification
 - [Data Models](docs/architecture/DATA_MODELS.md) - Database schemas and relationships
-- [Backend Services](docs/architecture/BACKEND_SERVICES.md) - Librarian, Tutor, and Orchestrator specs
+- [Backend Services](docs/architecture/BACKEND_SERVICES.md) - Librarian, Orchestrator, and Agent integration
 - [API Specification](docs/architecture/API_SPECIFICATION.md) - REST endpoints and contracts
 - [Frontend & UX](docs/architecture/FRONTEND_UX.md) - Components, pages, and user experience
 
@@ -46,9 +47,17 @@ The Virtual Socratic University distinguishes between **Knowledge** (factual rec
 ┌──────────────────────────────────────────────────┐
 │           AGENT SWARM (FastAPI)                   │
 │  ┌────────────┐ ┌────────────┐ ┌────────────┐   │
-│  │ LIBRARIAN  │ │ORCHESTRATOR│ │   TUTOR    │   │
-│  │(Questions) │ │(Game State)│ │(LLM/AI)    │   │
+│  │ LIBRARIAN  │ │ORCHESTRATOR│ │  SOCRATES  │   │
+│  │(Questions) │ │(Game State)│ │  (Claude)  │   │
 │  └────────────┘ └────────────┘ └────────────┘   │
+│                                      │           │
+│                        ┌─────────────▼─────────┐ │
+│                        │    TOOL SUITE         │ │
+│                        │ • get_student_history │ │
+│                        │ • fetch_mnemonic      │ │
+│                        │ • get_socratic_hints  │ │
+│                        │ • analyze_distractor  │ │
+│                        └───────────────────────┘ │
 └──────────────────────────────────────────────────┘
                         │
                         ▼
@@ -57,6 +66,15 @@ The Virtual Socratic University distinguishes between **Knowledge** (factual rec
 │  PostgreSQL (Content) │ Redis (Sessions)          │
 └──────────────────────────────────────────────────┘
 ```
+
+### Socrates Agent
+
+The heart of the system is the **Socrates Agent**—an autonomous AI tutor powered by Claude that reasons about student performance and decides how to respond. Unlike simple LLM wrappers, Socrates uses tools to:
+
+- Check student history for patterns
+- Fetch appropriate mnemonics or hints
+- Record misconceptions for parent insights
+- Suggest difficulty adjustments
 
 ## Key Features
 
@@ -87,7 +105,7 @@ The Virtual Socratic University distinguishes between **Knowledge** (factual rec
 ### Backend
 - Python 3.11+
 - FastAPI
-- LangGraph (Agent orchestration)
+- **Anthropic Claude SDK** (direct API integration)
 - PostgreSQL 15
 - Redis 7
 
@@ -98,10 +116,11 @@ The Virtual Socratic University distinguishes between **Knowledge** (factual rec
 - Framer Motion
 - Zustand
 
-### AI/LLM
-- Claude (Anthropic) or GPT-4
-- Low temperature (0.3) for consistency
-- Structured output for reliability
+### AI/Agent
+- **Claude claude-sonnet-4-20250514** (via Anthropic SDK)
+- **Native tool use** for agentic reasoning
+- Low temperature (0.3) for consistent persona
+- Structured JSON output for frontend integration
 
 ## Getting Started
 
