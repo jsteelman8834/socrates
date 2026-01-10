@@ -1,0 +1,173 @@
+{
+  "topic": {
+    "id": "age-of-exploration",
+    "name": "The Age of Exploration",
+    "description": "Learn about the brave explorers who discovered new worlds",
+    "grade_level": 5,
+    "subject": "US History"
+  },
+  "questions": [
+    {
+      "id": "exp-001",
+      "text": "Which explorer is credited with discovering America in 1492?",
+      "type": "knowledge",
+      "difficulty_tier": 1,
+      "cognitive_verb": "identify",
+      "question_stem": "which",
+      "subtopic": "Christopher Columbus",
+      "options": [
+        {"label": "A", "text": "Christopher Columbus", "is_correct": true},
+        {"label": "B", "text": "Amerigo Vespucci", "is_correct": false, "distractor_type": "common_confusion", "confusion_explanation": "Vespucci came later and America is named after him, but Columbus arrived first."},
+        {"label": "C", "text": "Ferdinand Magellan", "is_correct": false, "distractor_type": "same_era", "confusion_explanation": "Magellan is famous for circumnavigation, not discovering America."},
+        {"label": "D", "text": "John Cabot", "is_correct": false, "distractor_type": "different_nation", "confusion_explanation": "Cabot explored for England in 1497, after Columbus."}
+      ],
+      "correct_answer_explanation": "Christopher Columbus, sailing for Spain, reached the Americas on October 12, 1492.",
+      "mnemonics": [
+        {"text": "Columbus sailed the ocean blue in fourteen hundred ninety-two!", "type": "rhyme"}
+      ]
+    },
+    {
+      "id": "exp-002",
+      "text": "Which country sponsored Christopher Columbus's voyage?",
+      "type": "knowledge",
+      "difficulty_tier": 1,
+      "cognitive_verb": "identify",
+      "question_stem": "which",
+      "subtopic": "Christopher Columbus",
+      "options": [
+        {"label": "A", "text": "Portugal", "is_correct": false, "distractor_type": "near_miss", "confusion_explanation": "Portugal rejected Columbus; he then went to Spain."},
+        {"label": "B", "text": "England", "is_correct": false, "distractor_type": "competing_nation", "confusion_explanation": "England sponsored John Cabot, not Columbus."},
+        {"label": "C", "text": "Spain", "is_correct": true},
+        {"label": "D", "text": "France", "is_correct": false, "distractor_type": "competing_nation", "confusion_explanation": "France sponsored Jacques Cartier, not Columbus."}
+      ],
+      "correct_answer_explanation": "Queen Isabella and King Ferdinand of Spain funded Columbus's expedition after Portugal turned him down.",
+      "mnemonics": [
+        {"text": "Spain starts with 'S' like 'Sponsored' - Spain Sponsored Columbus!", "type": "association"}
+      ]
+    },
+    {
+      "id": "exp-003",
+      "text": "Why did Columbus sail west instead of east to reach Asia?",
+      "type": "wisdom",
+      "difficulty_tier": 2,
+      "cognitive_verb": "explain",
+      "question_stem": "why",
+      "subtopic": "Christopher Columbus",
+      "options": [
+        {"label": "A", "text": "He believed sailing west on a round Earth would be shorter", "is_correct": true},
+        {"label": "B", "text": "The eastern route was blocked by enemy ships", "is_correct": false, "distractor_type": "plausible_but_wrong", "confusion_explanation": "The sea route east wasn't blocked - it was just very long."},
+        {"label": "C", "text": "He was trying to discover new lands", "is_correct": false, "distractor_type": "anachronism", "confusion_explanation": "Columbus genuinely wanted to reach Asia; finding America was accidental."},
+        {"label": "D", "text": "Spain ordered him to sail west", "is_correct": false, "distractor_type": "partial_truth", "confusion_explanation": "Columbus proposed the route; Spain didn't order the direction."}
+      ],
+      "correct_answer_explanation": "Columbus believed the Earth was round and calculated (incorrectly) that sailing west would be shorter than going east around Africa.",
+      "socratic_hints": [
+        {"level": 1, "text": "Think about what Columbus knew about the shape of the Earth."},
+        {"level": 2, "text": "If you're trying to get somewhere on the other side of a ball, are there different ways to get there?"},
+        {"level": 3, "text": "If Asia is in the east, and you keep going west on a round Earth, where would you eventually end up?"}
+      ]
+    },
+    {
+      "id": "exp-004",
+      "text": "What was the main reason European nations wanted to find new trade routes to Asia?",
+      "type": "wisdom",
+      "difficulty_tier": 2,
+      "cognitive_verb": "explain",
+      "question_stem": "what",
+      "subtopic": "Motivations for Exploration",
+      "options": [
+        {"label": "A", "text": "To spread Christianity to Asian nations", "is_correct": false, "distractor_type": "partial_truth", "confusion_explanation": "Religion was a motivation, but trade and wealth were primary drivers."},
+        {"label": "B", "text": "To obtain valuable spices and silk that were expensive via land routes", "is_correct": true},
+        {"label": "C", "text": "To escape religious persecution in Europe", "is_correct": false, "distractor_type": "wrong_context", "confusion_explanation": "This motivated later colonists, not the original explorers."},
+        {"label": "D", "text": "To find gold in Asian cities", "is_correct": false, "distractor_type": "close_but_wrong", "confusion_explanation": "Gold was sought in the Americas, but Asian trade was about spices and silk."}
+      ],
+      "correct_answer_explanation": "European nations wanted direct sea routes to Asia to buy spices (like pepper and cinnamon) and silk without paying high prices to middlemen on overland routes.",
+      "socratic_hints": [
+        {"level": 1, "text": "What special products did Asia have that Europeans wanted?"},
+        {"level": 2, "text": "The land route to Asia was long and controlled by many traders. What happens to prices when many people take a cut?"},
+        {"level": 3, "text": "If you could sail directly to where spices came from instead of buying them from traders who transported them overland, how might that affect the price you pay?"}
+      ]
+    },
+    {
+      "id": "rev-001",
+      "text": "What was the main idea behind 'no taxation without representation'?",
+      "type": "wisdom",
+      "difficulty_tier": 2,
+      "cognitive_verb": "explain",
+      "question_stem": "what",
+      "subtopic": "Causes of Revolution",
+      "options": [
+        {"label": "A", "text": "Colonists shouldn't pay any taxes at all", "is_correct": false, "distractor_type": "oversimplification", "confusion_explanation": "Colonists weren't against all taxes - they objected to taxes imposed without their voice in Parliament."},
+        {"label": "B", "text": "Only representatives should pay taxes", "is_correct": false, "distractor_type": "misinterpretation", "confusion_explanation": "This misunderstands the phrase - it's about having representatives who vote on taxes."},
+        {"label": "C", "text": "Colonists should have a voice in decisions about taxes that affect them", "is_correct": true},
+        {"label": "D", "text": "Britain should represent the colonies in all matters", "is_correct": false, "distractor_type": "opposite", "confusion_explanation": "This is the opposite - colonists wanted their OWN representatives, not Britain speaking for them."}
+      ],
+      "correct_answer_explanation": "The colonists believed that if they had to pay taxes, they should have elected representatives in Parliament who could vote on those taxes. Since they had no representatives, they felt the taxes were unfair.",
+      "socratic_hints": [
+        {"level": 1, "text": "Think about what 'representation' means. Who represents you in your school or community?"},
+        {"level": 2, "text": "Imagine if someone made rules about your allowance without asking you. How would that feel?"},
+        {"level": 3, "text": "British Parliament made tax laws for the colonies. Did the colonists get to vote for members of Parliament?"}
+      ]
+    },
+    {
+      "id": "act-001",
+      "text": "Which act required colonists to buy special stamped paper for legal documents?",
+      "type": "knowledge",
+      "difficulty_tier": 1,
+      "cognitive_verb": "identify",
+      "question_stem": "which",
+      "subtopic": "Stamp Act",
+      "options": [
+        {"label": "A", "text": "The Tea Act", "is_correct": false, "distractor_type": "common_confusion", "confusion_explanation": "The Tea Act was about tea, not paper. Easy to confuse different Acts."},
+        {"label": "B", "text": "The Stamp Act", "is_correct": true},
+        {"label": "C", "text": "The Quartering Act", "is_correct": false, "distractor_type": "different_purpose", "confusion_explanation": "The Quartering Act was about housing soldiers, not taxing paper."},
+        {"label": "D", "text": "The Sugar Act", "is_correct": false, "distractor_type": "different_goods", "confusion_explanation": "The Sugar Act taxed sugar and molasses, not paper."}
+      ],
+      "correct_answer_explanation": "The Stamp Act of 1765 required colonists to pay a tax on printed materials by buying special stamped paper. This affected newspapers, legal documents, and even playing cards.",
+      "mnemonics": [
+        {"text": "STAMP it on PAPER - The Stamp Act taxed paper!", "type": "association"},
+        {"text": "Stamp Act = Stamp on Documents", "type": "association"}
+      ]
+    },
+    {
+      "id": "act-002",
+      "text": "What event was a direct response to the Tea Act of 1773?",
+      "type": "knowledge",
+      "difficulty_tier": 1,
+      "cognitive_verb": "identify",
+      "question_stem": "what",
+      "subtopic": "Tea Act",
+      "options": [
+        {"label": "A", "text": "The Boston Massacre", "is_correct": false, "distractor_type": "wrong_sequence", "confusion_explanation": "The Boston Massacre happened in 1770, before the Tea Act."},
+        {"label": "B", "text": "The Boston Tea Party", "is_correct": true},
+        {"label": "C", "text": "The signing of the Declaration of Independence", "is_correct": false, "distractor_type": "later_event", "confusion_explanation": "The Declaration came in 1776, several years after the Tea Party."},
+        {"label": "D", "text": "The Battle of Lexington", "is_correct": false, "distractor_type": "later_event", "confusion_explanation": "The battles at Lexington and Concord came in 1775, after the Tea Party."}
+      ],
+      "correct_answer_explanation": "The Boston Tea Party (December 1773) was a protest against the Tea Act. Colonists dressed as Native Americans boarded ships and dumped tea into Boston Harbor.",
+      "mnemonics": [
+        {"text": "TEA Act led to TEA Party - tea connects them!", "type": "association"},
+        {"text": "At this 'party,' they threw the tea overboard instead of drinking it!", "type": "story"}
+      ]
+    },
+    {
+      "id": "act-003",
+      "text": "Why did the Tea Act make colonists angry even though it actually lowered the price of tea?",
+      "type": "wisdom",
+      "difficulty_tier": 3,
+      "cognitive_verb": "analyze",
+      "question_stem": "why",
+      "subtopic": "Tea Act",
+      "options": [
+        {"label": "A", "text": "Colonists didn't like tea", "is_correct": false, "distractor_type": "silly_distractor", "confusion_explanation": "Tea was actually very popular in the colonies."},
+        {"label": "B", "text": "The cheaper tea would put colonial merchants out of business", "is_correct": false, "distractor_type": "partial_truth", "confusion_explanation": "This was a concern, but the main issue was the principle of taxation."},
+        {"label": "C", "text": "It still included a tax decided without colonial representation", "is_correct": true},
+        {"label": "D", "text": "The tea tasted bad", "is_correct": false, "distractor_type": "silly_distractor", "confusion_explanation": "The quality of tea wasn't the issue - it was about principle."}
+      ],
+      "correct_answer_explanation": "Even though the Tea Act made tea cheaper, colonists were angry because accepting the cheap tea meant accepting Parliament's right to tax them without representation. The issue wasn't the money - it was the principle.",
+      "socratic_hints": [
+        {"level": 1, "text": "Think about what the colonists had been protesting for years. Was it about the amount of money, or something else?"},
+        {"level": 2, "text": "If you accept a 'gift' that comes with unfair conditions, what message does that send?"},
+        {"level": 3, "text": "If colonists bought the cheap tea, they'd be paying a tax they never agreed to. What were they really protesting - the price or the principle?"}
+      ]
+    }
+  ]
+}
