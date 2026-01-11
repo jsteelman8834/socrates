@@ -79,7 +79,6 @@ export async function POST(
       .select(
         `
         *,
-        answer_options (*),
         mnemonics (*),
         socratic_hints (*)
       `
@@ -94,40 +93,61 @@ export async function POST(
       );
     }
 
+    // DISTRACTOR ENGINEERING: Get answer options for the current tier
+    // This includes the trap_explanation for targeted feedback
+    const currentTier = session.max_tier_reached || 1;
+    let { data: answerOptions } = await supabase
+      .from('answer_options')
+      .select('*')
+      .eq('question_id', questionId)
+      .eq('difficulty_tier', currentTier)
+      .order('option_label');
+
+    // Fall back to tier 1 if no options for current tier
+    if (!answerOptions || answerOptions.length === 0) {
+      const { data: fallbackOptions } = await supabase
+        .from('answer_options')
+        .select('*')
+        .eq('question_id', questionId)
+        .eq('difficulty_tier', 1)
+        .order('option_label');
+      answerOptions = fallbackOptions || [];
+    }
+
     // Build the question object for the agent
-    const correctOption = question.answer_options.find((o: any) => o.is_correct);
+    const correctOption = answerOptions.find((o: any) => o.is_correct);
     const questionWithAnswer: QuestionWithAnswer = {
       id: question.id,
       topicId: question.topic_id,
       questionText: question.question_text,
       questionType: question.question_type,
-      difficultyTier: question.difficulty_tier,
-      cognitiveVerb: question.cognitive_verb,
-      questionStem: question.question_stem,
-      options: question.answer_options
-        .sort((a: any, b: any) => a.display_order - b.display_order)
-        .map((o: any) => ({
-          id: o.id,
-          label: o.option_label,
-          text: o.option_text,
-        })),
+      difficultyTier: currentTier,
+      cognitiveVerb: question.cognitive_verb || '',
+      questionStem: question.question_stem || '',
+      options: answerOptions.map((o: any) => ({
+        id: o.id,
+        label: o.option_label,
+        text: o.option_text,
+      })),
       correctOptionId: correctOption?.id || '',
-      correctAnswer: question.correct_answer,
-      answerExplanation: question.answer_explanation,
-      distractors: question.answer_options
-        .filter((o: any) => !o.is_correct && o.distractor_type)
+      correctAnswer: correctOption?.option_text || '',
+      answerExplanation: question.answer_explanation || '',
+      // DISTRACTOR ENGINEERING: Include trap_explanation for targeted feedback
+      distractors: answerOptions
+        .filter((o: any) => !o.is_correct)
         .map((o: any) => ({
           optionId: o.id,
-          distractorType: o.distractor_type,
-          confusionExplanation: o.confusion_explanation || '',
-          relatedConcept: o.related_concept,
+          distractorType: o.distractor_type || 'same_category',
+          confusionExplanation: o.trap_explanation || '',  // Use trap_explanation from DB
+          trapExplanation: o.trap_explanation || '',       // Also store as trapExplanation
+          relatedConcept: undefined,
         })),
-      mnemonics: question.mnemonics.map((m: any) => ({
+      mnemonics: (question.mnemonics || []).map((m: any) => ({
         id: m.id,
         text: m.mnemonic_text,
         type: m.mnemonic_type,
       })),
-      socraticHints: question.socratic_hints
+      socraticHints: (question.socratic_hints || [])
         .sort((a: any, b: any) => a.hint_level - b.hint_level)
         .map((h: any) => ({
           level: h.hint_level,

@@ -4,7 +4,27 @@
 
 export type QuestionType = 'knowledge' | 'wisdom';
 export type DifficultyTier = 1 | 2 | 3 | 4;
-export type DistractorType = 'common_confusion' | 'partial_truth' | 'anachronism' | 'near_miss' | 'plausible_but_wrong';
+
+/**
+ * Distractor types used for Distractor Engineering
+ * These classify wrong answers by how they're designed to confuse students:
+ *
+ * - correct: The right answer
+ * - wrong_era: Answer from a different time period (easy to rule out)
+ * - wrong_category: Answer from a different category entirely (easy)
+ * - same_category: Answer in the right category but different fact (medium)
+ * - near_miss: Almost correct, closely related (hard)
+ * - trap: Deliberately confusing, common misconception (hard)
+ * - common_misconception: Widely believed but incorrect (hard)
+ */
+export type DistractorType =
+  | 'correct'
+  | 'wrong_era'
+  | 'wrong_category'
+  | 'same_category'
+  | 'near_miss'
+  | 'trap'
+  | 'common_misconception';
 
 export interface AnswerOption {
   id: string;
@@ -33,11 +53,18 @@ export interface QuestionWithAnswer extends Question {
   socraticHints: SocraticHint[];
 }
 
+/**
+ * Information about a distractor (wrong answer option)
+ *
+ * This is used by the Socrates Agent to provide targeted feedback
+ * based on WHY the student might have chosen this particular wrong answer.
+ */
 export interface DistractorInfo {
   optionId: string;
   distractorType: DistractorType;
-  confusionExplanation: string;
-  relatedConcept?: string;
+  confusionExplanation: string;   // Human-readable explanation for content editors
+  trapExplanation: string;        // Agent instruction: how to guide students who pick this
+  relatedConcept?: string;        // What correct concept this relates to
 }
 
 export interface Mnemonic {

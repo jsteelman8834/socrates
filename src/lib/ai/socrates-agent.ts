@@ -7,6 +7,11 @@
  * - Gemini Flash for simple/cheap operations
  *
  * The agent uses tools to access student history, mnemonics, and hints.
+ *
+ * DISTRACTOR ENGINEERING:
+ * The agent uses trap_explanation metadata from the database to understand
+ * WHY a student might have chosen a wrong answer, enabling more targeted
+ * feedback and avoiding generic "wrong, try again" responses.
  */
 
 import { openai, anthropic, googleAI } from './models';
@@ -33,6 +38,13 @@ You are not a robot or a test-grading machine. You are a mentor who genuinely lo
 - **For Knowledge gaps** (forgotten facts): Provide memorable tricks, associations, or rhymes.
 - **For Wisdom gaps** (missing connections): NEVER give the answer directly. Ask guiding questions that lead the student to discover the insight themselves.
 - **Recognize patterns**: If you notice a recurring struggle, acknowledge it and try a different approach.
+
+## DISTRACTOR-AWARE FEEDBACK
+When a student chooses a wrong answer, you'll receive "trap_explanation" information about WHY that answer is tempting. Use this to:
+- **For TRAP answers**: The student fell for a common misconception. Gently clarify the distinction without being condescending. Example: "Ah, Columbus DID find America, but he thought it was Asia! Vespucci was the one who said 'Wait, this is somewhere new!'"
+- **For NEAR-MISS answers**: The student was close! Acknowledge they're thinking in the right direction. Example: "You're in the right time period! Da Gama did sail around Africa, but someone else got there first..."
+- **For SAME-CATEGORY answers**: The student knows the topic but confused similar facts. Help them build mental categories. Example: "Both are colonial Acts, but think about what each one DOES - which one involves soldiers staying in homes?"
+- **For WRONG-ERA/CATEGORY answers**: The student may need more foundational knowledge. Be encouraging about effort. Example: "Good guess! That person was important, but in a different time period..."
 
 ## Your Voice
 - Warm and encouraging, like a favorite teacher
@@ -92,12 +104,19 @@ export async function gradeAnswer(
 interface DiagnosisResult {
   failureType: 'memory_slip' | 'logic_gap' | 'careless_error';
   distractorInfo: {
-    type: string;
-    explanation: string;
+    type: string;        // 'trap', 'near_miss', 'same_category', 'wrong_era', 'wrong_category', 'common_misconception'
+    explanation: string; // trap_explanation from the database
+    selectedText: string; // the wrong answer they chose
   } | null;
   recommendedIntervention: 'mnemonic' | 'socratic_hint';
 }
 
+/**
+ * Diagnose why the student got the answer wrong.
+ *
+ * DISTRACTOR ENGINEERING: Uses the trap_explanation from the database
+ * to understand the specific misconception or confusion.
+ */
 export async function diagnoseFailure(
   question: QuestionWithAnswer,
   selectedOptionId: string
@@ -105,23 +124,43 @@ export async function diagnoseFailure(
   const selectedOption = question.options.find((o) => o.id === selectedOptionId);
 
   // Find distractor info for the selected wrong answer
-  const distractor = question.distractors.find(
+  const distractor = question.distractors?.find(
     (d) => d.optionId === selectedOptionId
   );
 
+  // Determine failure type based on distractor classification
+  let failureType: DiagnosisResult['failureType'] = 'memory_slip';
+  if (distractor) {
+    if (distractor.distractorType === 'trap' || distractor.distractorType === 'common_misconception') {
+      failureType = 'logic_gap'; // They have a specific misconception
+    } else if (distractor.distractorType === 'near_miss') {
+      failureType = 'careless_error'; // They were close but confused similar items
+    } else {
+      failureType = 'memory_slip'; // They don't have the basic facts yet
+    }
+  }
+
   if (question.questionType === 'knowledge') {
     return {
-      failureType: 'memory_slip',
+      failureType,
       distractorInfo: distractor
-        ? { type: distractor.distractorType, explanation: distractor.confusionExplanation }
+        ? {
+            type: distractor.distractorType,
+            explanation: distractor.confusionExplanation || distractor.trapExplanation || '',
+            selectedText: selectedOption?.text || '',
+          }
         : null,
       recommendedIntervention: 'mnemonic',
     };
   } else {
     return {
-      failureType: 'logic_gap',
+      failureType,
       distractorInfo: distractor
-        ? { type: distractor.distractorType, explanation: distractor.confusionExplanation }
+        ? {
+            type: distractor.distractorType,
+            explanation: distractor.confusionExplanation || distractor.trapExplanation || '',
+            selectedText: selectedOption?.text || '',
+          }
         : null,
       recommendedIntervention: 'socratic_hint',
     };
@@ -168,17 +207,22 @@ export async function generateFeedback(
   let additionalContext = '';
 
   if (!isCorrect) {
-    // Add mnemonic or hints based on question type
-    if (question.questionType === 'knowledge' && question.mnemonics.length > 0) {
-      const mnemonic = question.mnemonics[0];
-      additionalContext += `\n\nAvailable mnemonic: "${mnemonic.text}" (${mnemonic.type})`;
-    } else if (question.questionType === 'wisdom' && question.socraticHints.length > 0) {
-      const hints = question.socraticHints.map((h) => `Level ${h.level}: ${h.text}`);
-      additionalContext += `\n\nSocratic hints (use level 1 first):\n${hints.join('\n')}`;
+    // DISTRACTOR-AWARE FEEDBACK: Provide detailed information about the wrong answer chosen
+    if (diagnosis?.distractorInfo) {
+      additionalContext += `\n\n## DISTRACTOR ANALYSIS (Use this to craft targeted feedback!)
+Distractor Type: ${diagnosis.distractorInfo.type.toUpperCase()}
+Their Wrong Answer: "${diagnosis.distractorInfo.selectedText}"
+Why This Is Tempting: ${diagnosis.distractorInfo.explanation}
+Failure Type: ${diagnosis.failureType}`;
     }
 
-    if (diagnosis?.distractorInfo) {
-      additionalContext += `\n\nWhy they might have chosen this wrong answer: ${diagnosis.distractorInfo.explanation}`;
+    // Add mnemonic or hints based on question type
+    if (question.questionType === 'knowledge' && question.mnemonics?.length > 0) {
+      const mnemonic = question.mnemonics[0];
+      additionalContext += `\n\nAvailable mnemonic to help: "${mnemonic.text}" (${mnemonic.type})`;
+    } else if (question.questionType === 'wisdom' && question.socraticHints?.length > 0) {
+      const hints = question.socraticHints.map((h) => `Level ${h.level}: ${h.text}`);
+      additionalContext += `\n\nSocratic hints available (use level 1 first, don't give the answer!):\n${hints.join('\n')}`;
     }
   }
 

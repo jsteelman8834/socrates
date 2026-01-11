@@ -3,6 +3,13 @@ import { auth } from '@clerk/nextjs/server';
 import { createAdminSupabaseClient } from '@/lib/db/supabase';
 
 // GET /api/sessions/[sessionId]/question - Get next question
+//
+// DISTRACTOR ENGINEERING: The question text stays the same, but we serve
+// different answer options based on the student's tier:
+// - Tier 1: Wrong era/category distractors (obviously wrong)
+// - Tier 2: Same category distractors (require subject knowledge)
+// - Tier 3: Near-miss and trap distractors (require deep understanding)
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { sessionId: string } }
@@ -40,37 +47,28 @@ export async function GET(
       );
     }
 
-    // Determine target difficulty and question type
-    const targetTier = session.max_tier_reached;
+    // Current difficulty tier determines which distractor set to use
+    const targetTier = session.max_tier_reached || 1;
     const askedIds = session.asked_question_ids || [];
 
     // Alternate between knowledge and wisdom questions
     const preferType =
       session.questions_attempted % 2 === 0 ? 'knowledge' : 'wisdom';
 
-    // Query for a question
+    // Query for questions (we'll get options separately by tier)
     let query = supabase
       .from('questions')
-      .select(
-        `
+      .select(`
         id,
         topic_id,
         question_text,
         question_type,
-        difficulty_tier,
-        cognitive_verb,
-        question_stem,
-        answer_options (
-          id,
-          option_text,
-          option_label,
-          display_order
-        )
-      `
-      )
+        base_difficulty,
+        citation_text,
+        citation_source
+      `)
       .eq('topic_id', session.topic_id)
-      .eq('is_active', true)
-      .lte('difficulty_tier', targetTier);
+      .eq('is_active', true);
 
     // Exclude already asked questions
     if (askedIds.length > 0) {
@@ -91,26 +89,17 @@ export async function GET(
       // Fall back to any question type
       const { data: fallbackQuestions } = await supabase
         .from('questions')
-        .select(
-          `
+        .select(`
           id,
           topic_id,
           question_text,
           question_type,
-          difficulty_tier,
-          cognitive_verb,
-          question_stem,
-          answer_options (
-            id,
-            option_text,
-            option_label,
-            display_order
-          )
-        `
-        )
+          base_difficulty,
+          citation_text,
+          citation_source
+        `)
         .eq('topic_id', session.topic_id)
         .eq('is_active', true)
-        .lte('difficulty_tier', targetTier)
         .not('id', 'in', askedIds.length > 0 ? `(${askedIds.join(',')})` : '()')
         .limit(5);
 
@@ -141,6 +130,51 @@ export async function GET(
       });
     }
 
+    // DISTRACTOR ENGINEERING: Get answer options for the student's current tier
+    // This is where the magic happens - same question, tier-appropriate distractors
+    const { data: optionsForTier, error: optionsError } = await supabase
+      .from('answer_options')
+      .select(`
+        id,
+        option_label,
+        option_text,
+        is_correct,
+        difficulty_tier,
+        distractor_type,
+        trap_explanation
+      `)
+      .eq('question_id', selectedQuestion.id)
+      .eq('difficulty_tier', targetTier)
+      .order('option_label');
+
+    // If no options exist for this tier, fall back to tier 1
+    let options = optionsForTier;
+    if (!options || options.length === 0) {
+      const { data: fallbackOptions } = await supabase
+        .from('answer_options')
+        .select(`
+          id,
+          option_label,
+          option_text,
+          is_correct,
+          difficulty_tier,
+          distractor_type,
+          trap_explanation
+        `)
+        .eq('question_id', selectedQuestion.id)
+        .eq('difficulty_tier', 1)
+        .order('option_label');
+
+      options = fallbackOptions || [];
+    }
+
+    // Shuffle options for variety (but keep correct answer random position)
+    const shuffledOptions = shuffleArray(options).map((o: any) => ({
+      id: o.id,
+      label: o.option_label,
+      text: o.option_text,
+    }));
+
     // Update session with current question
     await supabase
       .from('learning_sessions')
@@ -150,15 +184,6 @@ export async function GET(
       })
       .eq('id', sessionId);
 
-    // Sort options by display order
-    const sortedOptions = (selectedQuestion.answer_options || [])
-      .sort((a: any, b: any) => a.display_order - b.display_order)
-      .map((o: any) => ({
-        id: o.id,
-        label: o.option_label,
-        text: o.option_text,
-      }));
-
     return NextResponse.json({
       success: true,
       data: {
@@ -167,11 +192,12 @@ export async function GET(
           topicId: selectedQuestion.topic_id,
           questionText: selectedQuestion.question_text,
           questionType: selectedQuestion.question_type,
-          difficultyTier: selectedQuestion.difficulty_tier,
-          options: sortedOptions,
+          difficultyTier: targetTier, // The tier of distractors being served
+          options: shuffledOptions,
+          citation: selectedQuestion.citation_source || null,
         },
         sessionState: {
-          currentTier: session.max_tier_reached,
+          currentTier: targetTier,
           heartsRemaining: session.hearts_remaining,
           currentStreak: session.current_streak,
           questionsAnswered: session.questions_attempted,
@@ -187,4 +213,14 @@ export async function GET(
       { status: 500 }
     );
   }
+}
+
+// Fisher-Yates shuffle
+function shuffleArray<T>(array: T[]): T[] {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
 }
