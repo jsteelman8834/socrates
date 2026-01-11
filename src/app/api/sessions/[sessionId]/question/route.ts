@@ -1,0 +1,190 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
+import { createAdminSupabaseClient } from '@/lib/db/supabase';
+
+// GET /api/sessions/[sessionId]/question - Get next question
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { sessionId: string } }
+) {
+  try {
+    const { userId } = auth();
+    if (!userId) {
+      return NextResponse.json(
+        { error: { code: 'UNAUTHORIZED', message: 'Not authenticated' } },
+        { status: 401 }
+      );
+    }
+
+    const { sessionId } = params;
+    const supabase = createAdminSupabaseClient();
+
+    // Get the session
+    const { data: session, error: sessionError } = await supabase
+      .from('learning_sessions')
+      .select('*')
+      .eq('id', sessionId)
+      .single();
+
+    if (sessionError || !session) {
+      return NextResponse.json(
+        { error: { code: 'SESSION_NOT_FOUND', message: 'Session not found' } },
+        { status: 404 }
+      );
+    }
+
+    if (session.status !== 'active') {
+      return NextResponse.json(
+        { error: { code: 'SESSION_ENDED', message: 'Session is not active' } },
+        { status: 400 }
+      );
+    }
+
+    // Determine target difficulty and question type
+    const targetTier = session.max_tier_reached;
+    const askedIds = session.asked_question_ids || [];
+
+    // Alternate between knowledge and wisdom questions
+    const preferType =
+      session.questions_attempted % 2 === 0 ? 'knowledge' : 'wisdom';
+
+    // Query for a question
+    let query = supabase
+      .from('questions')
+      .select(
+        `
+        id,
+        topic_id,
+        question_text,
+        question_type,
+        difficulty_tier,
+        cognitive_verb,
+        question_stem,
+        answer_options (
+          id,
+          option_text,
+          option_label,
+          display_order
+        )
+      `
+      )
+      .eq('topic_id', session.topic_id)
+      .eq('is_active', true)
+      .lte('difficulty_tier', targetTier);
+
+    // Exclude already asked questions
+    if (askedIds.length > 0) {
+      query = query.not('id', 'in', `(${askedIds.join(',')})`);
+    }
+
+    // Try to get preferred type first
+    const { data: questions, error: questionError } = await query
+      .eq('question_type', preferType)
+      .limit(5);
+
+    let selectedQuestion = null;
+
+    if (questions && questions.length > 0) {
+      // Randomly select from available questions
+      selectedQuestion = questions[Math.floor(Math.random() * questions.length)];
+    } else {
+      // Fall back to any question type
+      const { data: fallbackQuestions } = await supabase
+        .from('questions')
+        .select(
+          `
+          id,
+          topic_id,
+          question_text,
+          question_type,
+          difficulty_tier,
+          cognitive_verb,
+          question_stem,
+          answer_options (
+            id,
+            option_text,
+            option_label,
+            display_order
+          )
+        `
+        )
+        .eq('topic_id', session.topic_id)
+        .eq('is_active', true)
+        .lte('difficulty_tier', targetTier)
+        .not('id', 'in', askedIds.length > 0 ? `(${askedIds.join(',')})` : '()')
+        .limit(5);
+
+      if (fallbackQuestions && fallbackQuestions.length > 0) {
+        selectedQuestion =
+          fallbackQuestions[Math.floor(Math.random() * fallbackQuestions.length)];
+      }
+    }
+
+    if (!selectedQuestion) {
+      // No more questions available - end session
+      await supabase
+        .from('learning_sessions')
+        .update({
+          status: 'completed',
+          ended_at: new Date().toISOString(),
+          ending_tier: session.max_tier_reached,
+        })
+        .eq('id', sessionId);
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          question: null,
+          sessionEnded: true,
+          reason: 'NO_QUESTIONS_AVAILABLE',
+        },
+      });
+    }
+
+    // Update session with current question
+    await supabase
+      .from('learning_sessions')
+      .update({
+        current_question_id: selectedQuestion.id,
+        asked_question_ids: [...askedIds, selectedQuestion.id],
+      })
+      .eq('id', sessionId);
+
+    // Sort options by display order
+    const sortedOptions = (selectedQuestion.answer_options || [])
+      .sort((a: any, b: any) => a.display_order - b.display_order)
+      .map((o: any) => ({
+        id: o.id,
+        label: o.option_label,
+        text: o.option_text,
+      }));
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        question: {
+          id: selectedQuestion.id,
+          topicId: selectedQuestion.topic_id,
+          questionText: selectedQuestion.question_text,
+          questionType: selectedQuestion.question_type,
+          difficultyTier: selectedQuestion.difficulty_tier,
+          options: sortedOptions,
+        },
+        sessionState: {
+          currentTier: session.max_tier_reached,
+          heartsRemaining: session.hearts_remaining,
+          currentStreak: session.current_streak,
+          questionsAnswered: session.questions_attempted,
+          totalXp: session.xp_earned,
+        },
+        sessionEnded: false,
+      },
+    });
+  } catch (error) {
+    console.error('Question API error:', error);
+    return NextResponse.json(
+      { error: { code: 'INTERNAL_ERROR', message: 'Internal server error' } },
+      { status: 500 }
+    );
+  }
+}
