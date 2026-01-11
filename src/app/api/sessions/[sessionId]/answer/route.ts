@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { createAdminSupabaseClient } from '@/lib/db/supabase';
-import { respondToAnswer } from '@/lib/ai/socrates-agent';
+import { dispatchToAgent, type Subject } from '@/lib/agents';
 import { z } from 'zod';
 import type { QuestionWithAnswer } from '@/types';
+import type { MathQuestionWithAnswer, MathDistractorInfo, PatternHint } from '@/types/math';
 
 const answerSchema = z.object({
   questionId: z.string().uuid(),
@@ -73,15 +74,18 @@ export async function POST(
       );
     }
 
+    // Determine subject from session
+    const subject = (session.subject || 'history') as Subject;
+    const isMath = subject === 'math';
+
     // Get the full question with answer info
+    // Include subject-specific related data
     const { data: question } = await supabase
       .from('questions')
       .select(
-        `
-        *,
-        mnemonics (*),
-        socratic_hints (*)
-      `
+        isMath
+          ? `*, pattern_hints (*)`
+          : `*, mnemonics (*), socratic_hints (*)`
       )
       .eq('id', questionId)
       .single();
@@ -114,49 +118,102 @@ export async function POST(
       answerOptions = fallbackOptions || [];
     }
 
-    // Build the question object for the agent
+    // Build the question object for the agent based on subject
     const correctOption = answerOptions.find((o: any) => o.is_correct);
-    const questionWithAnswer: QuestionWithAnswer = {
-      id: question.id,
-      topicId: question.topic_id,
-      questionText: question.question_text,
-      questionType: question.question_type,
-      difficultyTier: currentTier,
-      cognitiveVerb: question.cognitive_verb || '',
-      questionStem: question.question_stem || '',
-      options: answerOptions.map((o: any) => ({
-        id: o.id,
-        label: o.option_label,
-        text: o.option_text,
-      })),
-      correctOptionId: correctOption?.id || '',
-      correctAnswer: correctOption?.option_text || '',
-      answerExplanation: question.answer_explanation || '',
-      // DISTRACTOR ENGINEERING: Include trap_explanation for targeted feedback
-      distractors: answerOptions
+
+    // Build subject-appropriate question object
+    let questionForAgent: QuestionWithAnswer | MathQuestionWithAnswer;
+
+    if (isMath) {
+      // Build math question with procedural error distractors
+      const mathDistractors: MathDistractorInfo[] = answerOptions
         .filter((o: any) => !o.is_correct)
         .map((o: any) => ({
           optionId: o.id,
-          distractorType: o.distractor_type || 'same_category',
-          confusionExplanation: o.trap_explanation || '',  // Use trap_explanation from DB
-          trapExplanation: o.trap_explanation || '',       // Also store as trapExplanation
-          relatedConcept: undefined,
-        })),
-      mnemonics: (question.mnemonics || []).map((m: any) => ({
-        id: m.id,
-        text: m.mnemonic_text,
-        type: m.mnemonic_type,
-      })),
-      socraticHints: (question.socratic_hints || [])
+          distractorType: o.distractor_type || 'reasonable_guess',
+          errorDescription: o.error_description || '',
+          pythgorasGuidance: o.pythagoras_guidance || '',
+          showWorkExample: o.show_work_example || undefined,
+        }));
+
+      const patternHints: PatternHint[] = (question.pattern_hints || [])
         .sort((a: any, b: any) => a.hint_level - b.hint_level)
         .map((h: any) => ({
           level: h.hint_level,
           text: h.hint_text,
-        })),
-    };
+          visualization: h.visualization || undefined,
+        }));
 
-    // Get response from Socrates agent
-    const agentResponse = await respondToAnswer(
+      questionForAgent = {
+        id: question.id,
+        topicId: question.topic_id,
+        domain: question.domain || 'multiplication',
+        questionText: question.question_text,
+        questionType: question.question_type,
+        difficultyTier: currentTier as 1 | 2 | 3 | 4,
+        options: answerOptions.map((o: any) => ({
+          id: o.id,
+          label: o.option_label,
+          text: o.option_text,
+          numericValue: o.numeric_value || undefined,
+        })),
+        expression: question.math_expression || undefined,
+        visualizationHint: question.visualization_hint || undefined,
+        correctOptionId: correctOption?.id || '',
+        correctAnswer: correctOption?.option_text || '',
+        correctNumericValue: correctOption?.numeric_value || undefined,
+        answerExplanation: question.answer_explanation || '',
+        distractors: mathDistractors,
+        patternHints,
+        visualizations: question.visualization_hint
+          ? [{ type: question.visualization_hint, description: '' }]
+          : [],
+      } as MathQuestionWithAnswer;
+    } else {
+      // Build history question with Socratic distractors
+      questionForAgent = {
+        id: question.id,
+        topicId: question.topic_id,
+        questionText: question.question_text,
+        questionType: question.question_type,
+        difficultyTier: currentTier,
+        cognitiveVerb: question.cognitive_verb || '',
+        questionStem: question.question_stem || '',
+        options: answerOptions.map((o: any) => ({
+          id: o.id,
+          label: o.option_label,
+          text: o.option_text,
+        })),
+        correctOptionId: correctOption?.id || '',
+        correctAnswer: correctOption?.option_text || '',
+        answerExplanation: question.answer_explanation || '',
+        // DISTRACTOR ENGINEERING: Include trap_explanation for targeted feedback
+        distractors: answerOptions
+          .filter((o: any) => !o.is_correct)
+          .map((o: any) => ({
+            optionId: o.id,
+            distractorType: o.distractor_type || 'same_category',
+            confusionExplanation: o.trap_explanation || '',
+            trapExplanation: o.trap_explanation || '',
+            relatedConcept: undefined,
+          })),
+        mnemonics: (question.mnemonics || []).map((m: any) => ({
+          id: m.id,
+          text: m.mnemonic_text,
+          type: m.mnemonic_type,
+        })),
+        socraticHints: (question.socratic_hints || [])
+          .sort((a: any, b: any) => a.hint_level - b.hint_level)
+          .map((h: any) => ({
+            level: h.hint_level,
+            text: h.hint_text,
+          })),
+      } as QuestionWithAnswer;
+    }
+
+    // Dispatch to appropriate agent based on subject
+    const agentResponse = await dispatchToAgent(
+      subject,
       {
         sessionId,
         studentId: user.id,
@@ -165,7 +222,7 @@ export async function POST(
         heartsRemaining: session.hearts_remaining,
         currentTier: session.max_tier_reached,
       },
-      questionWithAnswer,
+      questionForAgent,
       selectedOptionId
     );
 
