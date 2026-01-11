@@ -31,8 +31,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get optional batch size from query
-    const batchSize = parseInt(request.nextUrl.searchParams.get('batch') || '10', 10);
+    // Get and validate optional batch size from query (1-100, default 10)
+    const batchParam = request.nextUrl.searchParams.get('batch');
+    let batchSize = 10;
+    if (batchParam) {
+      const parsed = parseInt(batchParam, 10);
+      if (isNaN(parsed) || parsed < 1 || parsed > 100) {
+        return NextResponse.json(
+          { error: { code: 'INVALID_BATCH_SIZE', message: 'Batch size must be between 1 and 100' } },
+          { status: 400 }
+        );
+      }
+      batchSize = parsed;
+    }
 
     // Process queue
     const result = await processAnalysisQueue(batchSize);

@@ -40,11 +40,19 @@ export async function GET(
       );
     }
 
-    // Verify access - user must be the student, their parent, or an admin
-    const hasAccess =
-      requestingUser.id === studentId ||
-      requestingUser.role === 'admin' ||
-      requestingUser.role === 'parent';
+    // Verify access - students can view own, admins can view all, parents can view their children
+    let hasAccess = requestingUser.id === studentId || requestingUser.role === 'admin';
+
+    // If parent, verify they are the parent of this student
+    if (!hasAccess && requestingUser.role === 'parent') {
+      const { data: student } = await supabase
+        .from('users')
+        .select('parent_id')
+        .eq('id', studentId)
+        .single();
+
+      hasAccess = student?.parent_id === requestingUser.id;
+    }
 
     if (!hasAccess) {
       return NextResponse.json(
