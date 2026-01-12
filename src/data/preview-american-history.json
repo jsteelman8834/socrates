@@ -1,0 +1,254 @@
+{
+  "meta": {
+    "title": "American History Preview",
+    "description": "A taste of the Socratic method with Benjamin Franklin",
+    "totalQuestions": 15,
+    "batches": [
+      { "batch": 1, "tier": 1, "questions": 5, "theme": "Foundation" },
+      { "batch": 2, "tier": 2, "questions": 5, "theme": "Challenge" },
+      { "batch": 3, "tier": 3, "questions": 5, "theme": "Mastery" }
+    ]
+  },
+  "questions": [
+    {
+      "id": "preview-1",
+      "questionText": "Who wrote the pamphlet 'Common Sense' that helped convince colonists to support independence?",
+      "questionType": "knowledge",
+      "topicLabel": "Road to Revolution",
+      "tier": 1,
+      "options": [
+        { "id": "a", "label": "A", "text": "Thomas Paine", "isCorrect": true },
+        { "id": "b", "label": "B", "text": "Abraham Lincoln", "isCorrect": false, "distractorType": "wrong_era" },
+        { "id": "c", "label": "C", "text": "George Washington", "isCorrect": false, "distractorType": "same_category" },
+        { "id": "d", "label": "D", "text": "Benjamin Franklin", "isCorrect": false, "distractorType": "same_category" }
+      ],
+      "correctOptionId": "a",
+      "answerExplanation": "Thomas Paine wrote 'Common Sense' in 1776. It sold hundreds of thousands of copies and persuaded many colonists that independence from Britain was necessary.",
+      "mnemonics": ["Paine = Pain-fully honest about why we needed independence"]
+    },
+    {
+      "id": "preview-2",
+      "questionText": "What was the name of the first permanent English settlement in America?",
+      "questionType": "knowledge",
+      "topicLabel": "Colonial America",
+      "tier": 1,
+      "options": [
+        { "id": "a", "label": "A", "text": "Plymouth", "isCorrect": false, "distractorType": "near_miss" },
+        { "id": "b", "label": "B", "text": "Jamestown", "isCorrect": true },
+        { "id": "c", "label": "C", "text": "Boston", "isCorrect": false, "distractorType": "same_category" },
+        { "id": "d", "label": "D", "text": "Philadelphia", "isCorrect": false, "distractorType": "wrong_era" }
+      ],
+      "correctOptionId": "b",
+      "answerExplanation": "Jamestown was founded in 1607, making it the first permanent English settlement. Plymouth came later in 1620.",
+      "mnemonics": ["James-town was first - J comes before P (Plymouth)"]
+    },
+    {
+      "id": "preview-3",
+      "questionText": "The Boston Tea Party was a protest against what?",
+      "questionType": "knowledge",
+      "topicLabel": "Road to Revolution",
+      "tier": 1,
+      "options": [
+        { "id": "a", "label": "A", "text": "The price of tea being too high", "isCorrect": false, "distractorType": "common_misconception" },
+        { "id": "b", "label": "B", "text": "Taxation without representation", "isCorrect": true },
+        { "id": "c", "label": "C", "text": "British soldiers in homes", "isCorrect": false, "distractorType": "same_category" },
+        { "id": "d", "label": "D", "text": "Restrictions on fishing rights", "isCorrect": false, "distractorType": "wrong_category" }
+      ],
+      "correctOptionId": "b",
+      "answerExplanation": "The Boston Tea Party in 1773 protested taxation without representation. The colonists objected to paying taxes to a Parliament where they had no voice.",
+      "mnemonics": ["No taxation without representation - the rallying cry of revolution"]
+    },
+    {
+      "id": "preview-4",
+      "questionText": "Which explorer's voyage in 1492 opened the Americas to European exploration?",
+      "questionType": "knowledge",
+      "topicLabel": "Age of Exploration",
+      "tier": 1,
+      "options": [
+        { "id": "a", "label": "A", "text": "Christopher Columbus", "isCorrect": true },
+        { "id": "b", "label": "B", "text": "Amerigo Vespucci", "isCorrect": false, "distractorType": "near_miss" },
+        { "id": "c", "label": "C", "text": "Ferdinand Magellan", "isCorrect": false, "distractorType": "same_category" },
+        { "id": "d", "label": "D", "text": "Leif Erikson", "isCorrect": false, "distractorType": "trap" }
+      ],
+      "correctOptionId": "a",
+      "answerExplanation": "Christopher Columbus sailed in 1492 and reached the Caribbean, opening sustained European contact with the Americas. While Vikings like Leif Erikson came earlier, Columbus's voyage led to permanent colonization.",
+      "mnemonics": ["In 1492, Columbus sailed the ocean blue"]
+    },
+    {
+      "id": "preview-5",
+      "questionText": "Why did the Pilgrims leave England and come to America?",
+      "questionType": "wisdom",
+      "topicLabel": "Colonial America",
+      "tier": 1,
+      "options": [
+        { "id": "a", "label": "A", "text": "To find gold and treasure", "isCorrect": false, "distractorType": "common_misconception" },
+        { "id": "b", "label": "B", "text": "To escape famine and poverty", "isCorrect": false, "distractorType": "wrong_category" },
+        { "id": "c", "label": "C", "text": "To practice their religion freely", "isCorrect": true },
+        { "id": "d", "label": "D", "text": "To expand British territory", "isCorrect": false, "distractorType": "trap" }
+      ],
+      "correctOptionId": "c",
+      "answerExplanation": "The Pilgrims were Separatists who wanted to worship freely without interference from the Church of England. Religious freedom was their primary motivation for the dangerous voyage.",
+      "mnemonics": ["Pilgrims = People seeking religious peace"]
+    },
+    {
+      "id": "preview-6",
+      "questionText": "The Stamp Act of 1765 required colonists to pay taxes on what?",
+      "questionType": "knowledge",
+      "topicLabel": "The Acts",
+      "tier": 2,
+      "options": [
+        { "id": "a", "label": "A", "text": "Tea and sugar", "isCorrect": false, "distractorType": "near_miss" },
+        { "id": "b", "label": "B", "text": "Printed materials like newspapers and legal documents", "isCorrect": true },
+        { "id": "c", "label": "C", "text": "Imported cloth and clothing", "isCorrect": false, "distractorType": "wrong_category" },
+        { "id": "d", "label": "D", "text": "Property and land", "isCorrect": false, "distractorType": "same_category" }
+      ],
+      "correctOptionId": "b",
+      "answerExplanation": "The Stamp Act required colonists to buy special stamps for all printed materials - newspapers, playing cards, legal documents, and more. It affected nearly everyone and sparked widespread protest.",
+      "mnemonics": ["Stamp = papers you STAMP approval on (documents, newspapers)"]
+    },
+    {
+      "id": "preview-7",
+      "questionText": "What was the significance of the phrase 'No taxation without representation'?",
+      "questionType": "wisdom",
+      "topicLabel": "Road to Revolution",
+      "tier": 2,
+      "options": [
+        { "id": "a", "label": "A", "text": "Colonists wanted lower taxes", "isCorrect": false, "distractorType": "common_misconception" },
+        { "id": "b", "label": "B", "text": "Colonists believed they should have a voice in Parliament if they had to pay taxes", "isCorrect": true },
+        { "id": "c", "label": "C", "text": "Colonists refused to pay any taxes at all", "isCorrect": false, "distractorType": "trap" },
+        { "id": "d", "label": "D", "text": "Colonists wanted their own currency", "isCorrect": false, "distractorType": "wrong_category" }
+      ],
+      "correctOptionId": "b",
+      "answerExplanation": "The phrase expressed the colonists' core grievance: they were being taxed by a Parliament in which they had no elected representatives. It was about political rights, not just money.",
+      "mnemonics": ["Representation = having a voice in decisions that affect you"]
+    },
+    {
+      "id": "preview-8",
+      "questionText": "Why did Spain, Portugal, England, and France compete to explore and colonize the Americas?",
+      "questionType": "wisdom",
+      "topicLabel": "Age of Exploration",
+      "tier": 2,
+      "options": [
+        { "id": "a", "label": "A", "text": "To spread democracy", "isCorrect": false, "distractorType": "wrong_era" },
+        { "id": "b", "label": "B", "text": "To gain wealth, expand territory, and spread their religion", "isCorrect": true },
+        { "id": "c", "label": "C", "text": "To escape wars in Europe", "isCorrect": false, "distractorType": "common_misconception" },
+        { "id": "d", "label": "D", "text": "To learn from Native American cultures", "isCorrect": false, "distractorType": "trap" }
+      ],
+      "correctOptionId": "b",
+      "answerExplanation": "European nations sought 'God, Gold, and Glory' - spreading Christianity, acquiring wealth through trade and resources, and expanding their empires for national prestige.",
+      "mnemonics": ["God, Gold, and Glory - the three Gs of exploration"]
+    },
+    {
+      "id": "preview-9",
+      "questionText": "The Intolerable Acts were passed by Britain in response to what event?",
+      "questionType": "knowledge",
+      "topicLabel": "The Acts",
+      "tier": 2,
+      "options": [
+        { "id": "a", "label": "A", "text": "The signing of the Declaration of Independence", "isCorrect": false, "distractorType": "wrong_era" },
+        { "id": "b", "label": "B", "text": "The Boston Tea Party", "isCorrect": true },
+        { "id": "c", "label": "C", "text": "The Boston Massacre", "isCorrect": false, "distractorType": "near_miss" },
+        { "id": "d", "label": "D", "text": "The First Continental Congress", "isCorrect": false, "distractorType": "trap" }
+      ],
+      "correctOptionId": "b",
+      "answerExplanation": "The Intolerable Acts (1774) were Britain's punishment for the Boston Tea Party. They closed Boston Harbor and restricted colonial self-government, pushing the colonies closer to revolution.",
+      "mnemonics": ["Tea Party led to Intolerable punishment - Britain was NOT amused"]
+    },
+    {
+      "id": "preview-10",
+      "questionText": "How did the geography of the New England colonies influence the economy there?",
+      "questionType": "wisdom",
+      "topicLabel": "Colonial America",
+      "tier": 2,
+      "options": [
+        { "id": "a", "label": "A", "text": "Rich soil led to large tobacco plantations", "isCorrect": false, "distractorType": "trap" },
+        { "id": "b", "label": "B", "text": "Rocky soil and harbors led to fishing, shipbuilding, and trade", "isCorrect": true },
+        { "id": "c", "label": "C", "text": "Flat land led to cattle ranching", "isCorrect": false, "distractorType": "wrong_category" },
+        { "id": "d", "label": "D", "text": "Gold deposits led to mining", "isCorrect": false, "distractorType": "wrong_category" }
+      ],
+      "correctOptionId": "b",
+      "answerExplanation": "New England's rocky soil made large-scale farming difficult, but its coastline and forests made it ideal for fishing, shipbuilding, and trade. Geography shapes economy.",
+      "mnemonics": ["New England = rocky coast = ships and fish, not farms"]
+    },
+    {
+      "id": "preview-11",
+      "questionText": "What document, signed in 1620 aboard a ship, established self-government in Plymouth Colony?",
+      "questionType": "knowledge",
+      "topicLabel": "Colonial America",
+      "tier": 3,
+      "options": [
+        { "id": "a", "label": "A", "text": "The Declaration of Independence", "isCorrect": false, "distractorType": "wrong_era" },
+        { "id": "b", "label": "B", "text": "The Constitution", "isCorrect": false, "distractorType": "wrong_era" },
+        { "id": "c", "label": "C", "text": "The Mayflower Compact", "isCorrect": true },
+        { "id": "d", "label": "D", "text": "The Articles of Confederation", "isCorrect": false, "distractorType": "wrong_era" }
+      ],
+      "correctOptionId": "c",
+      "answerExplanation": "The Mayflower Compact was signed aboard the Mayflower in 1620. It was an early example of self-government, where the colonists agreed to make laws for the good of the colony.",
+      "mnemonics": ["Mayflower ship = Mayflower Compact"]
+    },
+    {
+      "id": "preview-12",
+      "questionText": "Why was the First Continental Congress significant in American history?",
+      "questionType": "wisdom",
+      "topicLabel": "Road to Revolution",
+      "tier": 3,
+      "options": [
+        { "id": "a", "label": "A", "text": "It declared independence from Britain", "isCorrect": false, "distractorType": "common_misconception" },
+        { "id": "b", "label": "B", "text": "It was the first time colonies worked together to address their grievances with Britain", "isCorrect": true },
+        { "id": "c", "label": "C", "text": "It created the U.S. Constitution", "isCorrect": false, "distractorType": "wrong_era" },
+        { "id": "d", "label": "D", "text": "It ended the Revolutionary War", "isCorrect": false, "distractorType": "wrong_era" }
+      ],
+      "correctOptionId": "b",
+      "answerExplanation": "The First Continental Congress (1774) was groundbreaking because representatives from 12 colonies met to coordinate a response to British policies. It marked the beginning of colonial unity.",
+      "mnemonics": ["First = first time colonies united"]
+    },
+    {
+      "id": "preview-13",
+      "questionText": "The Columbian Exchange refers to the transfer of plants, animals, and diseases between which regions?",
+      "questionType": "knowledge",
+      "topicLabel": "Age of Exploration",
+      "tier": 3,
+      "options": [
+        { "id": "a", "label": "A", "text": "Europe and Asia", "isCorrect": false, "distractorType": "wrong_category" },
+        { "id": "b", "label": "B", "text": "Africa and Europe", "isCorrect": false, "distractorType": "wrong_category" },
+        { "id": "c", "label": "C", "text": "The Americas and Europe/Africa", "isCorrect": true },
+        { "id": "d", "label": "D", "text": "North America and South America", "isCorrect": false, "distractorType": "trap" }
+      ],
+      "correctOptionId": "c",
+      "answerExplanation": "The Columbian Exchange was the widespread transfer of plants, animals, culture, and diseases between the Americas and the Old World (Europe, Africa, Asia) following Columbus's voyages.",
+      "mnemonics": ["Columbus = Columbian Exchange - Old World meets New World"]
+    },
+    {
+      "id": "preview-14",
+      "questionText": "How did the French and Indian War contribute to tensions between Britain and the American colonies?",
+      "questionType": "wisdom",
+      "topicLabel": "Road to Revolution",
+      "tier": 3,
+      "options": [
+        { "id": "a", "label": "A", "text": "France gained control of the colonies", "isCorrect": false, "distractorType": "trap" },
+        { "id": "b", "label": "B", "text": "Britain's war debt led to new taxes on the colonies", "isCorrect": true },
+        { "id": "c", "label": "C", "text": "The colonists wanted to remain loyal to France", "isCorrect": false, "distractorType": "wrong_category" },
+        { "id": "d", "label": "D", "text": "Native Americans took over colonial governments", "isCorrect": false, "distractorType": "wrong_category" }
+      ],
+      "correctOptionId": "b",
+      "answerExplanation": "Britain won the French and Indian War but accumulated massive debt. To pay it off, Parliament imposed new taxes on the colonies, sparking protests that eventually led to revolution.",
+      "mnemonics": ["War costs money - Britain made colonies pay, colonies got angry"]
+    },
+    {
+      "id": "preview-15",
+      "questionText": "What fundamental principle did the colonists believe the British government was violating?",
+      "questionType": "wisdom",
+      "topicLabel": "Road to Revolution",
+      "tier": 3,
+      "options": [
+        { "id": "a", "label": "A", "text": "The right to free education", "isCorrect": false, "distractorType": "wrong_era" },
+        { "id": "b", "label": "B", "text": "The natural rights of life, liberty, and property", "isCorrect": true },
+        { "id": "c", "label": "C", "text": "The right to form labor unions", "isCorrect": false, "distractorType": "wrong_era" },
+        { "id": "d", "label": "D", "text": "The separation of church and state", "isCorrect": false, "distractorType": "near_miss" }
+      ],
+      "correctOptionId": "b",
+      "answerExplanation": "Enlightenment thinkers like John Locke argued that all people have natural rights. The colonists believed British policies violated these fundamental rights, justifying their resistance.",
+      "mnemonics": ["Locke's locks: Life, Liberty, Property - keys to natural rights"]
+    }
+  ]
+}

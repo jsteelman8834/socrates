@@ -1,9 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { 
-  BookOpen, Compass, Feather, Eye, Key, Map, Wind, ArrowRight, Flame, 
-  Globe, Hourglass, Atom, Music, Anchor, Scale, Scroll, Sprout, Star 
+import Link from 'next/link';
+import {
+  BookOpen, Compass, Feather, Eye, Key, Map, Wind, ArrowRight, Flame,
+  Globe, Hourglass, Atom, Music, Anchor, Scale, Scroll, Sprout, Star,
+  Sparkles, GraduationCap
 } from 'lucide-react';
 
 // --- Components ---
@@ -218,6 +220,87 @@ const QuoteSection = () => (
   </section>
 );
 
+const PreviewSection = () => (
+  <section className="py-24 bg-slate-900 border-y border-slate-800">
+    <div className="max-w-6xl mx-auto px-6">
+      <div className="flex flex-col md:flex-row items-center gap-12">
+
+        {/* Left: Ben Franklin Portrait */}
+        <div className="w-full md:w-1/2 flex justify-center">
+          <div className="relative">
+            {/* Animated glow ring */}
+            <div className="absolute inset-0 rounded-full bg-amber-500/10 blur-2xl animate-pulse" />
+
+            {/* Portrait frame */}
+            <div className="relative w-48 h-48 md:w-64 md:h-64 rounded-full border-2 border-amber-900/50 overflow-hidden bg-slate-950 shadow-[0_0_40px_rgba(245,158,11,0.15)]">
+              {/* Placeholder - replace with actual portrait */}
+              <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900">
+                <span className="text-6xl md:text-7xl">🎩</span>
+              </div>
+            </div>
+
+            {/* Name badge */}
+            <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 bg-slate-950 border border-amber-500/50 rounded-lg shadow-lg">
+              <span className="font-mono text-amber-400 text-xs tracking-widest">
+                BENJAMIN FRANKLIN
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Right: Text and CTA */}
+        <div className="w-full md:w-1/2 space-y-6 text-center md:text-left">
+          <div className="flex items-center justify-center md:justify-start gap-2 text-amber-500">
+            <Sparkles size={20} />
+            <span className="font-mono text-xs tracking-widest uppercase">Free Preview</span>
+          </div>
+
+          <h2 className="font-serif text-3xl md:text-4xl text-amber-50">
+            Experience It Now
+          </h2>
+
+          <p className="font-mono text-slate-400 text-sm leading-relaxed">
+            Take a 15-question journey through American History with Benjamin Franklin
+            as your guide. Discover your learning style and see the Socratic method in action.
+          </p>
+
+          <div className="flex flex-col gap-4">
+            <Link href="/preview/american-history">
+              <button className="w-full md:w-auto px-8 py-4 bg-amber-600 text-white font-mono text-sm tracking-widest hover:bg-amber-500 transition-colors flex items-center justify-center gap-3 group">
+                BEGIN PREVIEW
+                <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+              </button>
+            </Link>
+            <p className="font-mono text-slate-600 text-xs">
+              No account required. Takes about 10 minutes.
+            </p>
+          </div>
+
+          {/* Feature bullets */}
+          <div className="grid grid-cols-2 gap-4 pt-4">
+            <div className="flex items-center gap-2 text-slate-400 text-sm">
+              <div className="w-2 h-2 rounded-full bg-amber-500" />
+              <span className="font-mono text-xs">15 Questions</span>
+            </div>
+            <div className="flex items-center gap-2 text-slate-400 text-sm">
+              <div className="w-2 h-2 rounded-full bg-emerald-500" />
+              <span className="font-mono text-xs">Progressive Difficulty</span>
+            </div>
+            <div className="flex items-center gap-2 text-slate-400 text-sm">
+              <div className="w-2 h-2 rounded-full bg-sky-500" />
+              <span className="font-mono text-xs">Instant Feedback</span>
+            </div>
+            <div className="flex items-center gap-2 text-slate-400 text-sm">
+              <div className="w-2 h-2 rounded-full bg-violet-500" />
+              <span className="font-mono text-xs">Learning Profile</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+);
+
 interface FeatureCardProps {
   icon: React.ComponentType<{ size?: number | string; strokeWidth?: number | string }>;
   title: string;
@@ -416,6 +499,7 @@ export default function HomePage() {
       <Navbar />
       <Hero />
       <QuoteSection />
+      <PreviewSection />
       <Pillars />
       <InteractiveMethod />
       <Footer />
