@@ -18,7 +18,7 @@ export async function POST(
   { params }: { params: { sessionId: string } }
 ) {
   try {
-    const { userId } = auth();
+    const { userId } = await auth();
     if (!userId) {
       return NextResponse.json(
         { error: { code: 'UNAUTHORIZED', message: 'Not authenticated' } },

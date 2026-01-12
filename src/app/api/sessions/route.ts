@@ -12,7 +12,7 @@ const startSessionSchema = z.object({
 // Supports both history (Socrates) and math (Pythagoras) subjects
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = auth();
+    const { userId } = await auth();
     if (!userId) {
       return NextResponse.json(
         { error: { code: 'UNAUTHORIZED', message: 'Not authenticated' } },

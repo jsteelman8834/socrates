@@ -5,7 +5,7 @@ import { createAdminSupabaseClient } from '@/lib/db/supabase';
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = auth();
+    const { userId } = await auth();
     if (!userId) {
       return NextResponse.json(
         { error: { code: 'UNAUTHORIZED', message: 'Not authenticated' } },
