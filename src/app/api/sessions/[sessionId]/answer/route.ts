@@ -254,28 +254,47 @@ export async function POST(
       streak_at_attempt: session.current_streak,
     });
 
-    // Update session
+    // Update session with subject-specific tracking
+    const questionType = question.question_type;
+    const sessionUpdate: Record<string, unknown> = {
+      status: sessionStatus,
+      questions_attempted: session.questions_attempted + 1,
+      questions_correct: session.questions_correct + (isCorrect ? 1 : 0),
+      current_streak: sessionUpdates.newStreak,
+      max_streak: Math.max(session.max_streak, sessionUpdates.newStreak),
+      hearts_remaining: newHeartsRemaining,
+      max_tier_reached: Math.max(session.max_tier_reached, newTier),
+      xp_earned: session.xp_earned + sessionUpdates.xpEarned,
+      current_question_id: null,
+      ended_at: sessionEnded ? new Date().toISOString() : null,
+      ending_tier: sessionEnded ? newTier : null,
+    };
+
+    // Track question type progress by subject
+    if (isMath) {
+      // Math: fluency/concept/problem_solving
+      if (isCorrect && questionType === 'fluency') {
+        sessionUpdate.fluency_correct = (session.fluency_correct || 0) + 1;
+      }
+      if (isCorrect && questionType === 'concept') {
+        sessionUpdate.concept_correct = (session.concept_correct || 0) + 1;
+      }
+      if (isCorrect && questionType === 'problem_solving') {
+        sessionUpdate.problem_solving_correct = (session.problem_solving_correct || 0) + 1;
+      }
+    } else {
+      // History: knowledge/wisdom
+      if (isCorrect && questionType === 'knowledge') {
+        sessionUpdate.knowledge_correct = (session.knowledge_correct || 0) + 1;
+      }
+      if (isCorrect && questionType === 'wisdom') {
+        sessionUpdate.wisdom_correct = (session.wisdom_correct || 0) + 1;
+      }
+    }
+
     await supabase
       .from('learning_sessions')
-      .update({
-        status: sessionStatus,
-        questions_attempted: session.questions_attempted + 1,
-        questions_correct: session.questions_correct + (isCorrect ? 1 : 0),
-        knowledge_correct:
-          session.knowledge_correct +
-          (isCorrect && question.question_type === 'knowledge' ? 1 : 0),
-        wisdom_correct:
-          session.wisdom_correct +
-          (isCorrect && question.question_type === 'wisdom' ? 1 : 0),
-        current_streak: sessionUpdates.newStreak,
-        max_streak: Math.max(session.max_streak, sessionUpdates.newStreak),
-        hearts_remaining: newHeartsRemaining,
-        max_tier_reached: Math.max(session.max_tier_reached, newTier),
-        xp_earned: session.xp_earned + sessionUpdates.xpEarned,
-        current_question_id: null,
-        ended_at: sessionEnded ? new Date().toISOString() : null,
-        ending_tier: sessionEnded ? newTier : null,
-      })
+      .update(sessionUpdate)
       .eq('id', sessionId);
 
     // Update student profile XP
@@ -286,22 +305,36 @@ export async function POST(
       });
     }
 
-    // Build response
+    // Build response with subject-specific progress
+    const baseSessionState = {
+      currentTier: newTier,
+      currentStreak: sessionUpdates.newStreak,
+      maxStreak: Math.max(session.max_streak, sessionUpdates.newStreak),
+      heartsRemaining: newHeartsRemaining,
+      questionsAnswered: session.questions_attempted + 1,
+      totalXp: session.xp_earned + sessionUpdates.xpEarned,
+      status: sessionStatus,
+    };
+
+    // Add subject-specific progress
+    const sessionState = isMath
+      ? {
+          ...baseSessionState,
+          fluencyProgress: (sessionUpdate.fluency_correct as number) || session.fluency_correct || 0,
+          conceptProgress: (sessionUpdate.concept_correct as number) || session.concept_correct || 0,
+          problemSolvingProgress: (sessionUpdate.problem_solving_correct as number) || session.problem_solving_correct || 0,
+        }
+      : {
+          ...baseSessionState,
+          knowledgeProgress: (sessionUpdate.knowledge_correct as number) || session.knowledge_correct || 0,
+          wisdomProgress: (sessionUpdate.wisdom_correct as number) || session.wisdom_correct || 0,
+        };
+
     const response = {
       success: true,
       data: {
         feedback,
-        sessionState: {
-          currentTier: newTier,
-          currentStreak: sessionUpdates.newStreak,
-          maxStreak: Math.max(session.max_streak, sessionUpdates.newStreak),
-          heartsRemaining: newHeartsRemaining,
-          questionsAnswered: session.questions_attempted + 1,
-          totalXp: session.xp_earned + sessionUpdates.xpEarned,
-          knowledgeProgress: session.knowledge_correct + (isCorrect && question.question_type === 'knowledge' ? 1 : 0),
-          wisdomProgress: session.wisdom_correct + (isCorrect && question.question_type === 'wisdom' ? 1 : 0),
-          status: sessionStatus,
-        },
+        sessionState,
         sessionEnded,
         tierChanged: sessionUpdates.tierChange !== 0,
         tierDirection: sessionUpdates.tierChange > 0 ? 'up' : sessionUpdates.tierChange < 0 ? 'down' : null,
@@ -313,26 +346,56 @@ export async function POST(
       const totalQuestions = session.questions_attempted + 1;
       const correctAnswers = session.questions_correct + (isCorrect ? 1 : 0);
 
-      response.data.sessionSummary = {
+      // Build subject-specific summary
+      const baseSummary = {
         totalQuestions,
         correctAnswers,
         accuracy: correctAnswers / totalQuestions,
-        knowledgeAccuracy:
-          session.knowledge_correct > 0
-            ? session.knowledge_correct / (session.knowledge_correct + (session.questions_attempted - session.questions_correct) / 2)
-            : 0,
-        wisdomAccuracy:
-          session.wisdom_correct > 0
-            ? session.wisdom_correct / (session.wisdom_correct + (session.questions_attempted - session.questions_correct) / 2)
-            : 0,
         maxStreak: Math.max(session.max_streak, sessionUpdates.newStreak),
         xpEarned: session.xp_earned + sessionUpdates.xpEarned,
-        ratingChange: {
-          knowledge: isCorrect ? 5 : -3,
-          wisdom: isCorrect ? 5 : -3,
-        },
         achievementsUnlocked: [],
       };
+
+      if (isMath) {
+        // Math-specific summary
+        const fluencyCorrect = (sessionUpdate.fluency_correct as number) || session.fluency_correct || 0;
+        const conceptCorrect = (sessionUpdate.concept_correct as number) || session.concept_correct || 0;
+        const problemSolvingCorrect = (sessionUpdate.problem_solving_correct as number) || session.problem_solving_correct || 0;
+
+        response.data.sessionSummary = {
+          ...baseSummary,
+          fluencyCorrect,
+          conceptCorrect,
+          problemSolvingCorrect,
+          ratingChange: {
+            fluency: isCorrect ? 5 : -3,
+            concept: isCorrect ? 5 : -3,
+            problemSolving: isCorrect ? 5 : -3,
+          },
+        };
+      } else {
+        // History-specific summary
+        const knowledgeCorrect = (sessionUpdate.knowledge_correct as number) || session.knowledge_correct || 0;
+        const wisdomCorrect = (sessionUpdate.wisdom_correct as number) || session.wisdom_correct || 0;
+
+        response.data.sessionSummary = {
+          ...baseSummary,
+          knowledgeCorrect,
+          wisdomCorrect,
+          knowledgeAccuracy:
+            knowledgeCorrect > 0
+              ? knowledgeCorrect / (knowledgeCorrect + (session.questions_attempted - session.questions_correct) / 2)
+              : 0,
+          wisdomAccuracy:
+            wisdomCorrect > 0
+              ? wisdomCorrect / (wisdomCorrect + (session.questions_attempted - session.questions_correct) / 2)
+              : 0,
+          ratingChange: {
+            knowledge: isCorrect ? 5 : -3,
+            wisdom: isCorrect ? 5 : -3,
+          },
+        };
+      }
     }
 
     return NextResponse.json(response);

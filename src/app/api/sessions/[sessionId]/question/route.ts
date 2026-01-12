@@ -51,9 +51,20 @@ export async function GET(
     const targetTier = session.max_tier_reached || 1;
     const askedIds = session.asked_question_ids || [];
 
-    // Alternate between knowledge and wisdom questions
-    const preferType =
-      session.questions_attempted % 2 === 0 ? 'knowledge' : 'wisdom';
+    // Determine subject from session
+    const subject = session.subject || 'history';
+    const isMath = subject === 'math';
+
+    // Alternate between question types based on subject
+    // History: knowledge/wisdom (2-way rotation)
+    // Math: fluency/concept/problem_solving (3-way rotation)
+    let preferType: string;
+    if (isMath) {
+      const mathTypes = ['fluency', 'concept', 'problem_solving'];
+      preferType = mathTypes[session.questions_attempted % 3];
+    } else {
+      preferType = session.questions_attempted % 2 === 0 ? 'knowledge' : 'wisdom';
+    }
 
     // Query for questions (we'll get options separately by tier)
     let query = supabase
