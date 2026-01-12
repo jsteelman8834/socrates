@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
           stripe_subscription_id: subscriptionId,
           stripe_customer_id: customerId,
           status: subscription.status,
-          plan_id: priceId,
+          plan_type: priceId,
           current_period_start: new Date(
             subscription.current_period_start * 1000
           ).toISOString(),
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
           .from('subscriptions')
           .update({
             status: subscription.status,
-            plan_id: subscription.items.data[0].price.id,
+            plan_type: subscription.items.data[0].price.id,
             current_period_start: new Date(
               subscription.current_period_start * 1000
             ).toISOString(),
@@ -95,7 +95,6 @@ export async function POST(request: NextRequest) {
           .from('subscriptions')
           .update({
             status: 'canceled',
-            ended_at: new Date().toISOString(),
           })
           .eq('stripe_subscription_id', subscriptionId);
 

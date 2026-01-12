@@ -7,7 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { createAdminSupabaseClient } from '@/lib/db/supabase';
+import { createAdminSupabaseClient, Database } from '@/lib/db/supabase';
 import { aristotle } from '@/lib/ai/aristotle-agent';
 
 export async function GET(
@@ -27,9 +27,9 @@ export async function GET(
     const supabase = createAdminSupabaseClient();
 
     // Get the requesting user
-    const { data: requestingUser } = await supabase
+    const { data: requestingUser }: { data: Database['public']['Tables']['users']['Row'] | null } = await supabase
       .from('users')
-      .select('id, role')
+      .select('*')
       .eq('clerk_id', userId)
       .single();
 
@@ -45,7 +45,7 @@ export async function GET(
 
     // If parent, verify they are the parent of this student
     if (!hasAccess && requestingUser.role === 'parent') {
-      const { data: student } = await supabase
+      const { data: student }: { data: { parent_id: string | null } | null } = await supabase
         .from('users')
         .select('parent_id')
         .eq('id', studentId)
@@ -62,7 +62,7 @@ export async function GET(
     }
 
     // Check for a recent valid insight
-    const { data: existingInsight } = await supabase
+    const { data: existingInsight }: { data: Database['public']['Tables']['parent_insights']['Row'] | null } = await supabase
       .from('parent_insights')
       .select('*')
       .eq('student_id', studentId)

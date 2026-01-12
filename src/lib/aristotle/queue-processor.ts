@@ -16,8 +16,6 @@ import { createAdminSupabaseClient } from '@/lib/db/supabase';
 import { aristotle } from '@/lib/ai/aristotle-agent';
 import type { SessionAnalysisInput } from '@/types/aristotle';
 
-const supabase = createAdminSupabaseClient();
-
 interface QueueItem {
   id: string;
   session_id: string;
@@ -37,6 +35,8 @@ export async function processAnalysisQueue(batchSize = 10): Promise<{
   failed: number;
   remaining: number;
 }> {
+  const supabase = createAdminSupabaseClient();
+
   // Get queued items ordered by priority and queue time
   const { data: queueItems, error: fetchError } = await supabase
     .from('aristotle_analysis_queue')
@@ -81,6 +81,8 @@ export async function processAnalysisQueue(batchSize = 10): Promise<{
  * Process a single queue item
  */
 async function processQueueItem(item: QueueItem): Promise<void> {
+  const supabase = createAdminSupabaseClient();
+
   // Mark as processing
   await supabase
     .from('aristotle_analysis_queue')
@@ -93,11 +95,20 @@ async function processQueueItem(item: QueueItem): Promise<void> {
 
   try {
     // Fetch session data
-    const sessionData = await fetchSessionData(item.session_id);
+    const sessionData = (await fetchSessionData(item.session_id)) as Record<string, any> | null;
 
     if (!sessionData) {
       throw new Error(`Session ${item.session_id} not found`);
     }
+
+    const questionsAnswered =
+      sessionData.questions_attempted ?? sessionData.questions_answered ?? 0;
+    const correctCount =
+      sessionData.questions_correct ?? sessionData.correct_count ?? 0;
+    const incorrectCount =
+      sessionData.questions_attempted != null
+        ? Math.max(0, questionsAnswered - correctCount)
+        : sessionData.incorrect_count || 0;
 
     // Build analysis input
     const analysisInput: SessionAnalysisInput = {
@@ -106,9 +117,9 @@ async function processQueueItem(item: QueueItem): Promise<void> {
       subject: sessionData.subject || 'history',
       agent: sessionData.agent || 'socrates',
       duration: sessionData.duration_seconds || 0,
-      questionsAnswered: sessionData.questions_answered || 0,
-      correctCount: sessionData.correct_count || 0,
-      incorrectCount: sessionData.incorrect_count || 0,
+      questionsAnswered,
+      correctCount,
+      incorrectCount,
       streakMax: sessionData.max_streak || 0,
       tierReached: sessionData.max_tier_reached || 1,
       heartsLost: 3 - (sessionData.hearts_remaining || 3),
@@ -201,6 +212,8 @@ async function processQueueItem(item: QueueItem): Promise<void> {
  * Fetch session data with answer details
  */
 async function fetchSessionData(sessionId: string): Promise<Record<string, unknown> | null> {
+  const supabase = createAdminSupabaseClient();
+
   const { data: session } = await supabase
     .from('learning_sessions')
     .select('*')
@@ -264,6 +277,8 @@ export async function getQueueStats(): Promise<{
   completed: number;
   failed: number;
 }> {
+  const supabase = createAdminSupabaseClient();
+
   const { data: stats } = await supabase.from('aristotle_analysis_queue').select('status');
 
   const counts = {
@@ -292,6 +307,8 @@ export async function queueSessionForAnalysis(
   studentId: string,
   priority = 0
 ): Promise<void> {
+  const supabase = createAdminSupabaseClient();
+
   await supabase.from('aristotle_analysis_queue').upsert(
     {
       session_id: sessionId,

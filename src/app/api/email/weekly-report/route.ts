@@ -2,11 +2,19 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { sendEmail } from '@/lib/email/resend';
 import { createWeeklyReportEmail } from '@/lib/email/templates';
-import { createAdminSupabaseClient } from '@/lib/db/supabase';
+import { createAdminSupabaseClient, Database } from '@/lib/db/supabase';
 import { classifyLearningProfile, summarizeStudentProgress } from '@/lib/ai/socrates-agent';
 
 // This endpoint can be called by a cron job to send weekly reports
 // Or manually by parents to get an instant report
+
+type StudentProfileWithUser = Database['public']['Tables']['student_profiles']['Row'] & {
+  users: { display_name: string };
+};
+
+type SessionWithAttempts = Database['public']['Tables']['learning_sessions']['Row'] & {
+    question_attempts: Database['public']['Tables']['question_attempts']['Row'][];
+};
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,7 +29,7 @@ export async function POST(request: NextRequest) {
     const supabase = createAdminSupabaseClient();
 
     // Get user and their children
-    const { data: user } = await supabase
+    const { data: user }: { data: { id: string; email: string; display_name: string; } | null } = await supabase
       .from('users')
       .select('id, email, display_name')
       .eq('clerk_id', userId)
@@ -40,7 +48,9 @@ export async function POST(request: NextRequest) {
       .select('*, users!inner(display_name)')
       .eq('parent_id', user.id);
 
-    if (!children || children.length === 0) {
+    const typedChildren = children as StudentProfileWithUser[] | null;
+
+    if (!typedChildren || typedChildren.length === 0) {
       return NextResponse.json(
         { error: { code: 'NO_CHILDREN', message: 'No children linked to this account' } },
         { status: 400 }
@@ -52,7 +62,7 @@ export async function POST(request: NextRequest) {
     const oneWeekAgo = new Date();
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
-    for (const child of children) {
+    for (const child of typedChildren) {
       // Get weekly stats
       const { data: sessions } = await supabase
         .from('learning_sessions')
@@ -61,12 +71,14 @@ export async function POST(request: NextRequest) {
         .gte('started_at', oneWeekAgo.toISOString())
         .eq('status', 'completed');
 
-      if (!sessions || sessions.length === 0) {
+      const typedSessions = sessions as SessionWithAttempts[] | null;
+
+      if (!typedSessions || typedSessions.length === 0) {
         continue;
       }
 
       // Calculate stats
-      const totalAttempts = sessions.flatMap((s) => s.question_attempts || []);
+      const totalAttempts = typedSessions.flatMap((s) => s.question_attempts || []);
       const knowledgeAttempts = totalAttempts.filter(
         (a: any) => a.question_type === 'knowledge'
       );
@@ -83,15 +95,15 @@ export async function POST(request: NextRequest) {
           ? wisdomAttempts.filter((a: any) => a.is_correct).length / wisdomAttempts.length
           : 0;
 
-      const topStreak = Math.max(...sessions.map((s) => s.max_streak || 0));
-      const totalXp = sessions.reduce((sum, s) => sum + (s.xp_earned || 0), 0);
+      const topStreak = Math.max(...typedSessions.map((s) => s.max_streak || 0));
+      const totalXp = typedSessions.reduce((sum, s) => sum + (s.xp_earned || 0), 0);
 
       // Get learning profile
       const profile = await classifyLearningProfile(knowledgeAccuracy, wisdomAccuracy);
 
       // Generate AI insights
       const summary = await summarizeStudentProgress(child.user_id, {
-        sessionsCompleted: sessions.length,
+        sessionsCompleted: typedSessions.length,
         questionsAnswered: totalAttempts.length,
         knowledgeAccuracy,
         wisdomAccuracy,
@@ -110,7 +122,7 @@ export async function POST(request: NextRequest) {
       const { html, text } = createWeeklyReportEmail({
         parentName: user.display_name || 'Parent',
         childName: (child.users as any).display_name || 'Student',
-        sessionsCompleted: sessions.length,
+        sessionsCompleted: typedSessions.length,
         questionsAnswered: totalAttempts.length,
         knowledgeAccuracy,
         wisdomAccuracy,

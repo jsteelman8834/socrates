@@ -1,10 +1,5 @@
-'use client';
-
-import React, { useState, useEffect } from 'react';
-import { 
-  BookOpen, Compass, Feather, Eye, Key, Map, Wind, ArrowRight, Flame, 
-  Globe, Hourglass, Atom, Music, Anchor, Scale, Scroll, Sprout, Star 
-} from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { BookOpen, Compass, Feather, Eye, Key, Map, Star, Wind, ArrowRight, MousePointer2, Flame, Sparkles } from 'lucide-react';
 
 // --- Components ---
 
@@ -25,103 +20,55 @@ const Navbar = () => (
 );
 
 const Astrolabe = () => {
-  // Exterior Ring (5 Icons)
-  const outerDisciplines = [
-    { icon: BookOpen, color: "text-amber-400" },
-    { icon: Globe, color: "text-emerald-400" },
-    { icon: Hourglass, color: "text-sky-400" },
-    { icon: Atom, color: "text-violet-400" },
-    { icon: Music, color: "text-rose-400" },
-  ];
-
-  // Interior Ring (4 Icons)
-  const innerDisciplines = [
-    { icon: Anchor, color: "text-indigo-300" },
-    { icon: Scale, color: "text-amber-200" },
-    { icon: Scroll, color: "text-cyan-300" },
-    { icon: Sprout, color: "text-lime-300" },
-  ];
-
   return (
-    <div className="relative w-80 h-80 md:w-[28rem] md:h-[28rem] mb-12 flex items-center justify-center">
+    <div className="relative w-64 h-64 md:w-80 md:h-80 mb-12 flex items-center justify-center">
       {/* Glow Effect behind */}
       <div className="absolute inset-0 bg-amber-500/5 blur-3xl rounded-full"></div>
 
       {/* Ring 1: Outer Scale (The World) */}
       <div className="absolute inset-0 animate-[spin_60s_linear_infinite]">
         <svg className="w-full h-full text-slate-800" viewBox="0 0 100 100">
-          <circle cx="50" cy="50" r="49" fill="none" stroke="currentColor" strokeWidth="0.5" />
-          <path d="M50 1 V4 M50 96 V99 M1 50 H4 M96 50 H99" stroke="currentColor" strokeWidth="1" />
+          <circle cx="50" cy="50" r="48" fill="none" stroke="currentColor" strokeWidth="0.5" />
+          <path d="M50 2 V5 M50 95 V98 M2 50 H5 M95 50 H98" stroke="currentColor" strokeWidth="1" />
           {/* Ticks */}
           {[...Array(12)].map((_, i) => (
-             <line
-               key={i}
-               x1="50" y1="4" x2="50" y2="7"
-               stroke="currentColor"
+             <line 
+               key={i} 
+               x1="50" y1="5" x2="50" y2="8" 
+               stroke="currentColor" 
                strokeWidth="0.5"
-               transform={`rotate(${i * 30} 50 50)`}
+               transform={`rotate(${i * 30} 50 50)`} 
              />
           ))}
         </svg>
+        {/* Orbiting Compass */}
+        <div className="absolute top-0 left-1/2 -ml-3 -mt-3 text-slate-500 bg-slate-950 p-1 border border-slate-800 rounded-full shadow-sm shadow-black">
+          <Compass size={16} />
+        </div>
       </div>
 
-      {/* Ring 2: Middle Dashed + 5 Exterior Icons */}
-      <div className="absolute inset-10 md:inset-14 animate-[spin_50s_linear_infinite_reverse]">
+      {/* Ring 2: Middle Dashed (The Method) */}
+      <div className="absolute inset-8 animate-[spin_40s_linear_infinite_reverse]">
         <svg className="w-full h-full text-slate-700" viewBox="0 0 100 100">
-          {/* r=49 leaves exactly 1 unit (2%) of space from the edge, matching top-[2%] */}
-          <circle cx="50" cy="50" r="49" fill="none" stroke="currentColor" strokeWidth="0.5" strokeDasharray="4 4" />
+          <circle cx="50" cy="50" r="48" fill="none" stroke="currentColor" strokeWidth="0.5" strokeDasharray="4 4" />
         </svg>
-        
-        {/* Exterior Icons (5) */}
-        {outerDisciplines.map((item, i) => (
-           <div
-             key={i}
-             className="absolute top-0 left-1/2 h-1/2 w-0 origin-bottom"
-             style={{ transform: `rotate(${i * (360 / 5)}deg)` }}
-           >
-             {/* Positioned at top 2% to align with r=49 circle */}
-             <div className="absolute top-[2%] left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-               <div 
-                 style={{ transform: `rotate(-${i * (360 / 5)}deg)` }}
-                 className="bg-slate-950 border border-slate-800 p-2 rounded-full shadow-lg"
-               >
-                  <item.icon size={20} className={`${item.color} drop-shadow-[0_0_5px_rgba(0,0,0,0.8)]`} />
-               </div>
-             </div>
-           </div>
-        ))}
+         {/* Orbiting Feather */}
+         <div className="absolute bottom-6 right-6 text-amber-700/80 bg-slate-950 p-1 border border-slate-800 rounded-full">
+          <Feather size={14} />
+        </div>
       </div>
 
-      {/* Ring 3: Inner Constellation + 4 Interior Icons */}
-      <div className="absolute inset-24 md:inset-32 animate-[spin_30s_linear_infinite]">
+      {/* Ring 3: Inner Constellation (The Logic) */}
+      <div className="absolute inset-16 animate-[spin_25s_linear_infinite]">
         <svg className="w-full h-full text-slate-600" viewBox="0 0 100 100">
-          <circle cx="50" cy="50" r="49" fill="none" stroke="currentColor" strokeWidth="0.2" />
-          <polygon points="50,15 85,85 15,85" fill="none" stroke="currentColor" strokeWidth="0.2" className="opacity-20" />
+          <circle cx="50" cy="50" r="48" fill="none" stroke="currentColor" strokeWidth="0.2" />
+          <polygon points="50,10 85,85 15,85" fill="none" stroke="currentColor" strokeWidth="0.2" className="opacity-30" />
         </svg>
-
-        {/* Interior Icons (4) */}
-        {innerDisciplines.map((item, i) => (
-           <div
-             key={i}
-             className="absolute top-0 left-1/2 h-1/2 w-0 origin-bottom"
-             style={{ transform: `rotate(${i * (360 / 4)}deg)` }}
-           >
-              {/* Positioned at top 2% to align with r=49 circle */}
-              <div className="absolute top-[2%] left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-                <div 
-                  style={{ transform: `rotate(-${i * (360 / 4)}deg)` }}
-                  className="bg-slate-950 border border-slate-800 p-2 rounded-full shadow-lg"
-                >
-                  <item.icon size={18} className={`${item.color} drop-shadow-[0_0_5px_rgba(0,0,0,0.8)]`} />
-                </div>
-              </div>
-           </div>
-        ))}
       </div>
 
-      {/* Center: The Spark (Larger) */}
-      <div className="relative z-10 flex items-center justify-center w-20 h-20 md:w-24 md:h-24 bg-slate-950 border border-amber-900/30 rounded-full shadow-[0_0_30px_rgba(245,158,11,0.2)]">
-        <Flame size={44} className="text-amber-500 animate-pulse drop-shadow-[0_0_12px_rgba(245,158,11,0.6)]" />
+      {/* Center: The Spark */}
+      <div className="relative z-10 flex items-center justify-center w-16 h-16 bg-slate-950 border border-amber-900/30 rounded-full shadow-[0_0_15px_rgba(245,158,11,0.1)]">
+        <Flame size={24} className="text-amber-500 animate-pulse drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]" />
       </div>
     </div>
   );
@@ -129,9 +76,9 @@ const Astrolabe = () => {
 
 const Hero = () => {
   const [offset, setOffset] = useState({ x: 0, y: 0 });
-
+  
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
+    const handleMouseMove = (e) => {
       const x = (e.clientX / window.innerWidth - 0.5) * 20;
       const y = (e.clientY / window.innerHeight - 0.5) * 20;
       setOffset({ x, y });
@@ -143,7 +90,7 @@ const Hero = () => {
   return (
     <header className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-slate-950 pt-20">
       {/* Background Abstract Grid */}
-      <div
+      <div 
         className="absolute inset-0 opacity-10 pointer-events-none"
         style={{
           backgroundImage: `radial-gradient(circle at 2px 2px, rgba(251, 191, 36, 0.15) 1px, transparent 0)`,
@@ -173,7 +120,7 @@ const Hero = () => {
             </span>
             <div className="absolute inset-0 bg-slate-800 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></div>
           </button>
-
+          
           <button className="group relative px-8 py-4 bg-amber-900/20 border border-amber-900/50 text-amber-100 font-mono text-sm tracking-widest hover:bg-amber-900/40 hover:border-amber-500 transition-all">
             <span className="flex items-center gap-2">
               ENTER AS PARENT <Key size={16} />
@@ -209,7 +156,7 @@ const QuoteSection = () => (
     <div className="max-w-3xl mx-auto px-6 text-center space-y-8">
       <AnimatedFlame />
       <blockquote className="font-serif text-2xl md:text-3xl text-slate-300 italic leading-relaxed">
-        &ldquo;Education is the kindling of a flame, not the filling of a vessel.&rdquo;
+        "Education is the kindling of a flame, not the filling of a vessel."
       </blockquote>
       <cite className="block font-mono text-amber-500 text-sm tracking-widest not-italic">
         — SOCRATES
@@ -218,14 +165,8 @@ const QuoteSection = () => (
   </section>
 );
 
-interface FeatureCardProps {
-  icon: React.ComponentType<{ size?: number | string; strokeWidth?: number | string }>;
-  title: string;
-  desc: string;
-}
-
-const FeatureCard = ({ icon: Icon, title, desc }: FeatureCardProps) => (
-  <div
+const FeatureCard = ({ icon: Icon, title, desc, delay }) => (
+  <div 
     className="group relative p-8 border border-slate-800 bg-slate-900/30 hover:bg-slate-900/60 hover:border-amber-900/50 transition-all duration-500"
   >
     <div className="absolute top-4 right-4 text-slate-800 group-hover:text-amber-900/40 transition-colors">
@@ -255,19 +196,19 @@ const Pillars = () => (
           EST. 2026
         </div>
       </div>
-
+      
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <FeatureCard
+        <FeatureCard 
           icon={Map}
           title="The Unfamiliar Map"
           desc="We explore stories and problems from cultures different from our own. By traveling these new roads, we find truths we didn't know we were missing."
         />
-        <FeatureCard
+        <FeatureCard 
           icon={Wind}
           title="The Mist of Confusion"
           desc="Confusion isn't a bad thing; it's just the start of learning. We don't rush to clear it. Instead, we give you the compass to navigate until the path becomes clear."
         />
-        <FeatureCard
+        <FeatureCard 
           icon={BookOpen}
           title="The Conversation"
           desc="Real learning isn't just downloading facts. It's an ongoing conversation. In our seminars, you learn to speak up, disagree with respect, and think for yourself."
@@ -283,21 +224,21 @@ const InteractiveMethod = () => {
   return (
     <section className="py-24 bg-slate-900 border-y border-slate-800">
       <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row gap-12">
-
+        
         {/* Left Side: Text Controller */}
         <div className="w-full md:w-1/2 space-y-8">
           <h2 className="font-serif text-4xl text-white">
             Two Paths to Autonomy.
           </h2>
-
+          
           <div className="flex space-x-6 border-b border-slate-700 pb-4">
-            <button
+            <button 
               onClick={() => setActiveTab('scholar')}
               className={`font-mono text-sm tracking-widest pb-4 -mb-4 transition-colors ${activeTab === 'scholar' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-slate-500 hover:text-slate-300'}`}
             >
               FOR THE SCHOLAR
             </button>
-            <button
+            <button 
               onClick={() => setActiveTab('parent')}
               className={`font-mono text-sm tracking-widest pb-4 -mb-4 transition-colors ${activeTab === 'parent' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-slate-500 hover:text-slate-300'}`}
             >
@@ -307,9 +248,9 @@ const InteractiveMethod = () => {
 
           <div className="min-h-[200px]">
             {activeTab === 'scholar' ? (
-              <div className="space-y-4">
+              <div className="space-y-4 animate-in fade-in slide-in-from-left-4 duration-500">
                 <p className="text-slate-300 text-lg leading-relaxed">
-                  &ldquo;The chief threat to your intellectual freedom is not illiteracy... it is the subtler mental violence that occurs when you wrench new messages into old ideas.&rdquo;
+                  "The chief threat to your intellectual freedom is not illiteracy... it is the subtler mental violence that occurs when you wrench new messages into old ideas."
                 </p>
                 <p className="font-mono text-slate-500 text-sm">
                   — Wayne C. Booth
@@ -324,9 +265,9 @@ const InteractiveMethod = () => {
                 </div>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-500">
                 <p className="text-slate-300 text-lg leading-relaxed">
-                  &ldquo;There is no instrumental reason to get an education... It won&apos;t get you anything you won&apos;t get anyway. It is better because it is better.&rdquo;
+                  "There is no instrumental reason to get an education... It won't get you anything you won't get anyway. It is better because it is better."
                 </p>
                 <p className="font-mono text-slate-500 text-sm">
                   — Andrew Abbott
@@ -335,23 +276,23 @@ const InteractiveMethod = () => {
                   <h4 className="text-amber-100 font-bold mb-2">Our Promise:</h4>
                   <ul className="space-y-2 font-mono text-sm text-slate-400">
                     <li className="flex items-center gap-2"><div className="w-1 h-1 bg-amber-500 rounded-full"></div> Depth over breadth. No busy work.</li>
-                    <li className="flex items-center gap-2"><div className="w-1 h-1 bg-amber-500 rounded-full"></div> Developing the &ldquo;habit of thoughtfulness.&rdquo;</li>
-                    <li className="flex items-center gap-2"><div className="w-1 h-1 bg-amber-500 rounded-full"></div> A curriculum that respects your child&apos;s mind.</li>
+                    <li className="flex items-center gap-2"><div className="w-1 h-1 bg-amber-500 rounded-full"></div> Developing the "habit of thoughtfulness."</li>
+                    <li className="flex items-center gap-2"><div className="w-1 h-1 bg-amber-500 rounded-full"></div> A curriculum that respects your child's mind.</li>
                   </ul>
                 </div>
               </div>
             )}
           </div>
-
+          
           <button className="flex items-center gap-3 text-amber-500 hover:text-amber-400 hover:gap-4 transition-all font-mono text-sm">
             EXPLORE THE SYLLABUS <ArrowRight size={16} />
           </button>
         </div>
 
         {/* Right Side: Visual Metaphor */}
-        <div className="w-full md:w-1/2 min-h-[400px] bg-slate-950 border border-slate-800 relative overflow-hidden group">
+        <div className="w-full md:w-1/2 bg-slate-950 border border-slate-800 relative overflow-hidden group">
             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
-
+            
             {/* Interactive Circle */}
             <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
                 <div className={`relative w-48 h-48 border-2 transition-all duration-1000 ${activeTab === 'scholar' ? 'border-amber-500 rounded-full rotate-0' : 'border-emerald-500 rounded-none rotate-45'}`}>
@@ -364,7 +305,7 @@ const InteractiveMethod = () => {
                     </div>
                 </div>
             </div>
-
+            
             <div className="absolute bottom-4 right-4 font-mono text-xs text-slate-600">
                 FIG 1.2: {activeTab === 'scholar' ? 'THE PUPIL' : 'THE ARCHITECT'}
             </div>
@@ -384,11 +325,11 @@ const Footer = () => (
       <p className="font-mono text-slate-400 max-w-xl mx-auto">
         Join a cohort of like-minded families. Limited spots available for the upcoming term.
       </p>
-
+      
       <div className="flex flex-col md:flex-row justify-center items-center gap-4">
-        <input
-          type="email"
-          placeholder="parent@email.com"
+        <input 
+          type="email" 
+          placeholder="parent@email.com" 
           className="bg-slate-900 border border-slate-800 px-6 py-3 w-full md:w-80 text-slate-200 focus:outline-none focus:border-amber-500 font-mono text-sm"
         />
         <button className="bg-amber-600 text-white px-8 py-3 font-mono text-sm tracking-widest hover:bg-amber-500 transition-colors w-full md:w-auto">
@@ -410,7 +351,7 @@ const Footer = () => (
   </footer>
 );
 
-export default function HomePage() {
+const App = () => {
   return (
     <div className="bg-slate-950 min-h-screen text-slate-200 selection:bg-amber-500/30">
       <Navbar />
@@ -421,4 +362,6 @@ export default function HomePage() {
       <Footer />
     </div>
   );
-}
+};
+
+export default App;

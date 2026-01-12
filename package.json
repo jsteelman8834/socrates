@@ -12,12 +12,12 @@
     "db:reset": "supabase db reset"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.71.2",
     "@clerk/nextjs": "^5.0.0",
     "@google/generative-ai": "^0.2.0",
-    "@supabase/supabase-js": "^2.39.0",
     "@supabase/ssr": "^0.1.0",
+    "@supabase/supabase-js": "^2.39.0",
     "ai": "^3.0.0",
-    "@anthropic-ai/sdk": "^0.71.2",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
     "framer-motion": "^10.18.0",
@@ -28,7 +28,9 @@
     "react-dom": "^18.2.0",
     "resend": "^2.1.0",
     "stripe": "^14.12.0",
+    "svix": "^1.84.1",
     "tailwind-merge": "^2.2.0",
+    "tailwindcss-animate": "^1.0.7",
     "zod": "^3.22.4",
     "zustand": "^4.4.7"
   },
@@ -36,12 +38,12 @@
     "@types/node": "^20.10.0",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
-    "autoprefixer": "^10.4.16",
+    "autoprefixer": "^10.4.23",
     "eslint": "^8.56.0",
     "eslint-config-next": "14.2.25",
-    "postcss": "^8.4.32",
+    "postcss": "^8.5.6",
     "supabase": "^1.127.0",
-    "tailwindcss": "^3.4.0",
+    "tailwindcss": "^3.4.19",
     "typescript": "^5.3.0"
   }
 }

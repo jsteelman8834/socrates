@@ -172,12 +172,15 @@ Respond with this JSON structure:
 
 export class AristotleAgent {
   private anthropic: Anthropic;
-  private supabase = createAdminSupabaseClient();
 
   constructor() {
     this.anthropic = new Anthropic({
       apiKey: process.env.ANTHROPIC_API_KEY!,
     });
+  }
+
+  private getSupabase() {
+    return createAdminSupabaseClient();
   }
 
   /**
@@ -233,19 +236,24 @@ export class AristotleAgent {
     studentId: string,
     analysisResult: SessionAnalysisResult
   ): Promise<CognitiveFingerprint> {
+    const supabase = this.getSupabase();
+
     // Get or create fingerprint
-    let { data: fingerprint } = await this.supabase
+    let { data: fingerprint } = await supabase
       .from('cognitive_fingerprints')
       .select('*')
       .eq('student_id', studentId)
       .single();
 
     if (!fingerprint) {
-      const { data: newFingerprint } = await this.supabase
+      const { data: newFingerprint } = await supabase
         .from('cognitive_fingerprints')
         .insert({ student_id: studentId })
         .select()
         .single();
+      if (!newFingerprint) {
+        throw new Error('Failed to create cognitive fingerprint');
+      }
       fingerprint = newFingerprint;
     }
 
@@ -258,8 +266,9 @@ export class AristotleAgent {
       const countField = `${faculty}_observations_count`;
 
       // Weighted moving average
-      const currentScore = fingerprint[scoreField] || 0.5;
-      const currentCount = fingerprint[countField] || 0;
+      const fingerprintMetrics = fingerprint as unknown as Record<string, number>;
+      const currentScore = fingerprintMetrics[scoreField] || 0.5;
+      const currentCount = fingerprintMetrics[countField] || 0;
       const weight = Math.min(0.3, 1 / (currentCount + 1)); // Decay weight over time
       const newScore = currentScore * (1 - weight) + signal.strength * weight;
 
@@ -267,12 +276,16 @@ export class AristotleAgent {
       updates[countField] = currentCount + 1;
     }
 
-    const { data: updated } = await this.supabase
+    const { data: updated } = await supabase
       .from('cognitive_fingerprints')
       .update(updates)
       .eq('student_id', studentId)
       .select()
       .single();
+
+    if (!updated) {
+      throw new Error('Failed to update cognitive fingerprint');
+    }
 
     return this.mapToCognitiveFingerprint(updated);
   }
@@ -284,19 +297,24 @@ export class AristotleAgent {
     studentId: string,
     virtueSignals: SessionAnalysisResult['virtueSignals']
   ): Promise<VirtueProgress> {
+    const supabase = this.getSupabase();
+
     // Get or create virtue progress
-    let { data: progress } = await this.supabase
+    let { data: progress } = await supabase
       .from('virtue_progress')
       .select('*')
       .eq('student_id', studentId)
       .single();
 
     if (!progress) {
-      const { data: newProgress } = await this.supabase
+      const { data: newProgress } = await supabase
         .from('virtue_progress')
         .insert({ student_id: studentId })
         .select()
         .single();
+      if (!newProgress) {
+        throw new Error('Failed to create virtue progress');
+      }
       progress = newProgress;
     }
 
@@ -322,7 +340,8 @@ export class AristotleAgent {
 
       const field = virtueMap[signal.virtue];
       if (field) {
-        const currentScore = progress[field] || 0.5;
+        const progressMetrics = progress as unknown as Record<string, number>;
+        const currentScore = progressMetrics[field] || 0.5;
         // Gentle updates - virtues develop slowly
         const weight = 0.1;
         const newScore = currentScore * (1 - weight) + signal.strength * weight;
@@ -330,12 +349,16 @@ export class AristotleAgent {
       }
     }
 
-    const { data: updated } = await this.supabase
+    const { data: updated } = await supabase
       .from('virtue_progress')
       .update(updates)
       .eq('student_id', studentId)
       .select()
       .single();
+
+    if (!updated) {
+      throw new Error('Failed to update virtue progress');
+    }
 
     return this.mapToVirtueProgress(updated);
   }
@@ -355,7 +378,7 @@ export class AristotleAgent {
     const prompt = PARENT_INSIGHT_PROMPT
       .replace('{learningStyle}', fingerprint?.primaryLearningStyle || 'developing')
       .replace('{sessionsThisWeek}', String(stats.sessionsThisWeek))
-      .replace('{totalQuestions}', String(stats.totalQuestions))
+      .replace('{totalQuestions}', String(stats.totalQuestionsAnswered))
       .replace('{avgAccuracy}', String(Math.round(stats.averageAccuracy * 100)))
       .replace('{topSubject}', stats.topSubject || 'varied')
       .replace('{perceptionScore}', String(fingerprint?.perception.score || 0.5))
@@ -392,7 +415,7 @@ export class AristotleAgent {
     const insight = JSON.parse(textContent.text);
 
     // Store the insight
-    const { data: stored } = await this.supabase
+    const { data: stored } = await this.getSupabase()
       .from('parent_insights')
       .insert({
         student_id: studentId,
@@ -426,7 +449,7 @@ export class AristotleAgent {
     subject: 'history' | 'math' | 'writing'
   ): Promise<NextSessionAdjustments> {
     // Check for existing valid adjustments
-    const { data: existing } = await this.supabase
+    const { data: existing } = await this.getSupabase()
       .from('next_session_adjustments')
       .select('*')
       .eq('student_id', studentId)
@@ -442,7 +465,7 @@ export class AristotleAgent {
     }
 
     // Generate new adjustments based on recent analyses
-    const { data: recentAnalyses } = await this.supabase
+    const { data: recentAnalyses } = await this.getSupabase()
       .from('session_analyses')
       .select('*')
       .eq('student_id', studentId)
@@ -482,7 +505,7 @@ export class AristotleAgent {
     };
 
     // Store for next time
-    await this.supabase.from('next_session_adjustments').insert({
+    await this.getSupabase().from('next_session_adjustments').insert({
       student_id: studentId,
       subject,
       suggested_starting_tier: adjustment.suggestedStartingTier,
@@ -514,7 +537,7 @@ export class AristotleAgent {
   }
 
   private async getCognitiveFingerprint(studentId: string): Promise<CognitiveFingerprint | null> {
-    const { data } = await this.supabase
+    const { data } = await this.getSupabase()
       .from('cognitive_fingerprints')
       .select('*')
       .eq('student_id', studentId)
@@ -523,7 +546,7 @@ export class AristotleAgent {
   }
 
   private async getVirtueProgress(studentId: string): Promise<VirtueProgress | null> {
-    const { data } = await this.supabase
+    const { data } = await this.getSupabase()
       .from('virtue_progress')
       .select('*')
       .eq('student_id', studentId)
@@ -534,15 +557,17 @@ export class AristotleAgent {
   private async getStudentStats(studentId: string): Promise<ParentInsight['stats']> {
     const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
-    const { data: sessions } = await this.supabase
+    const { data: sessions } = await this.getSupabase()
       .from('learning_sessions')
       .select('*')
       .eq('student_id', studentId)
       .gte('created_at', weekAgo);
 
     const sessionsThisWeek = sessions?.length || 0;
-    const totalQuestions = sessions?.reduce((sum, s) => sum + (s.questions_answered || 0), 0) || 0;
-    const totalCorrect = sessions?.reduce((sum, s) => sum + (s.correct_count || 0), 0) || 0;
+    const totalQuestions =
+      sessions?.reduce((sum, s) => sum + (s.questions_attempted || 0), 0) || 0;
+    const totalCorrect =
+      sessions?.reduce((sum, s) => sum + (s.questions_correct || 0), 0) || 0;
     const averageAccuracy = totalQuestions > 0 ? totalCorrect / totalQuestions : 0;
 
     // Find top subject
@@ -570,7 +595,7 @@ export class AristotleAgent {
     studentId: string,
     limit: number
   ): Promise<BehavioralObservation[]> {
-    const { data } = await this.supabase
+    const { data } = await this.getSupabase()
       .from('behavioral_observations')
       .select('*')
       .eq('student_id', studentId)

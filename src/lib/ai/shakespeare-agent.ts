@@ -9,7 +9,6 @@
  */
 
 import Anthropic from '@anthropic-ai/sdk';
-import { createAdminSupabaseClient } from '@/lib/db/supabase';
 import type {
   WriterProfile,
   WritingSession,
@@ -211,7 +210,6 @@ Spark creativity without taking over their story.`,
 
 export class ShakespeareAgent {
   private anthropic: Anthropic;
-  private supabase = createAdminSupabaseClient();
 
   constructor() {
     this.anthropic = new Anthropic({

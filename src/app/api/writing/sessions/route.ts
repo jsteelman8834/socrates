@@ -72,6 +72,20 @@ export async function POST(request: NextRequest) {
     const challengeLevel = (requestedLevel || writerProfile?.challenge_level || 1) as ChallengeLevel;
 
     // Get a prompt - either specific or random for level
+    const mapPrompt = (row: any): WritingPrompt => ({
+      id: row.id,
+      challengeLevel: row.challenge_level,
+      title: row.title,
+      promptText: row.prompt_text,
+      promptType: row.prompt_type,
+      genres: row.genres || [],
+      scaffoldOptions: row.scaffold_options || [],
+      successCriteria: row.success_criteria || [],
+      estimatedMinutes: row.estimated_minutes || 10,
+      isActive: row.is_active ?? true,
+      createdAt: new Date(row.created_at),
+    });
+
     let prompt: WritingPrompt | null = null;
 
     if (promptId) {
@@ -81,7 +95,7 @@ export async function POST(request: NextRequest) {
         .eq('id', promptId)
         .eq('is_active', true)
         .single();
-      prompt = data;
+      prompt = data ? mapPrompt(data) : null;
     }
 
     if (!prompt) {
@@ -94,7 +108,7 @@ export async function POST(request: NextRequest) {
         .eq('is_active', true);
 
       if (prompts && prompts.length > 0) {
-        prompt = prompts[Math.floor(Math.random() * prompts.length)];
+        prompt = mapPrompt(prompts[Math.floor(Math.random() * prompts.length)]);
       }
     }
 
@@ -112,9 +126,10 @@ export async function POST(request: NextRequest) {
       .eq('prompt_type', 'warm_up')
       .eq('is_active', true);
 
-    const warmUpPrompt = warmUpPrompts && warmUpPrompts.length > 0
-      ? warmUpPrompts[Math.floor(Math.random() * warmUpPrompts.length)]
-      : null;
+    const warmUpPrompt =
+      warmUpPrompts && warmUpPrompts.length > 0
+        ? mapPrompt(warmUpPrompts[Math.floor(Math.random() * warmUpPrompts.length)])
+        : null;
 
     // Create session
     const { data: session, error: sessionError } = await supabase
@@ -167,15 +182,15 @@ export async function POST(request: NextRequest) {
         mainPrompt: {
           id: prompt.id,
           title: prompt.title,
-          text: prompt.prompt_text,
-          challengeLevel: prompt.challenge_level,
-          estimatedMinutes: prompt.estimated_minutes,
+          text: prompt.promptText,
+          challengeLevel: prompt.challengeLevel,
+          estimatedMinutes: prompt.estimatedMinutes,
         },
         warmUpPrompt: warmUpPrompt
           ? {
               id: warmUpPrompt.id,
               title: warmUpPrompt.title,
-              text: warmUpPrompt.prompt_text,
+              text: warmUpPrompt.promptText,
             }
           : null,
         shakespeareGreeting: greeting,

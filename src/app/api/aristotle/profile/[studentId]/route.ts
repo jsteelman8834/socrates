@@ -7,7 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { createAdminSupabaseClient } from '@/lib/db/supabase';
+import { createAdminSupabaseClient, Database } from '@/lib/db/supabase';
 import { aristotle } from '@/lib/ai/aristotle-agent';
 
 export async function GET(
@@ -27,9 +27,9 @@ export async function GET(
     const supabase = createAdminSupabaseClient();
 
     // Get the requesting user
-    const { data: requestingUser } = await supabase
+    const { data: requestingUser }: { data: Database['public']['Tables']['users']['Row'] | null } = await supabase
       .from('users')
-      .select('id, role')
+      .select('*')
       .eq('clerk_id', userId)
       .single();
 
@@ -45,7 +45,7 @@ export async function GET(
 
     // If parent, verify they are the parent of this student
     if (!hasAccess && requestingUser.role === 'parent') {
-      const { data: student } = await supabase
+      const { data: student }: { data: { parent_id: string | null } | null } = await supabase
         .from('users')
         .select('parent_id')
         .eq('id', studentId)
@@ -62,28 +62,28 @@ export async function GET(
     }
 
     // Get cognitive fingerprint
-    const { data: fingerprint } = await supabase
+    const { data: fingerprint }: { data: Database['public']['Tables']['cognitive_fingerprints']['Row'] | null } = await supabase
       .from('cognitive_fingerprints')
       .select('*')
       .eq('student_id', studentId)
       .single();
 
     // Get virtue progress
-    const { data: virtues } = await supabase
+    const { data: virtues }: { data: Database['public']['Tables']['virtue_progress']['Row'] | null } = await supabase
       .from('virtue_progress')
       .select('*')
       .eq('student_id', studentId)
       .single();
 
     // Get curriculum recommendations
-    const { data: recommendations } = await supabase
+    const { data: recommendations }: { data: Database['public']['Tables']['curriculum_recommendations']['Row'][] | null } = await supabase
       .from('curriculum_recommendations')
       .select('*')
       .eq('student_id', studentId)
       .eq('is_active', true);
 
     // Get next session adjustments
-    const { data: adjustments } = await supabase
+    const { data: adjustments }: { data: Database['public']['Tables']['next_session_adjustments']['Row'][] | null } = await supabase
       .from('next_session_adjustments')
       .select('*')
       .eq('student_id', studentId)

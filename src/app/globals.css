@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Merriweather:wght@400;700&family=Quicksand:wght@500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&family=Playfair+Display:wght@500;600;700&family=Roboto+Mono:wght@400;500;600&display=swap');
 
 @layer base {
   :root {
@@ -34,10 +34,86 @@
     @apply border-border;
   }
   body {
-    @apply bg-parchment-50 text-foreground font-body;
+    @apply text-foreground;
   }
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-display;
+}
+
+@layer components {
+  .bestiary-orbit {
+    animation: bestiary-orbit 18s ease-in-out infinite;
+  }
+
+  .bestiary-glow {
+    box-shadow: 0 0 40px rgba(252, 211, 77, 0.35), 0 0 120px rgba(59, 130, 246, 0.2);
+  }
+
+  .bestiary-dash {
+    stroke-dasharray: 280;
+    stroke-dashoffset: 280;
+    animation: bestiary-dash 6s ease-in-out infinite;
+  }
+}
+
+@keyframes bestiary-orbit {
+  0% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(12deg) scale(1.02);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes bestiary-dash {
+  0%,
+  100% {
+    stroke-dashoffset: 280;
+    opacity: 0.6;
+  }
+  50% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}
+
+/* Homepage animations */
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeSlideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@layer components {
+  /* Homepage: Flame glow effect */
+  .flame-glow {
+    filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.8));
+  }
+
+  /* Homepage: Tab content animations */
+  .animate-fade-slide-in {
+    animation: fadeSlideIn 0.5s ease-out forwards;
+  }
+
+  .animate-fade-slide-in-right {
+    animation: fadeSlideInRight 0.5s ease-out forwards;
   }
 }
 

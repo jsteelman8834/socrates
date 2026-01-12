@@ -94,22 +94,25 @@ export async function POST(
     );
 
     // Track scaffold usage in behavioral observations (for Aristotle analysis)
-    await supabase.from('behavioral_observations').insert({
-      session_id: sessionId,
-      student_id: user.id,
-      behavior_type: 'scaffold_usage',
-      faculty_observed: 'imagination', // Scaffold usage indicates imagination/creativity needs support
-      observation_data: {
-        stuckType,
-        contentLengthAtRequest: currentContent.length,
-        scaffoldType: scaffold.scaffoldType,
-      },
-      behavioral_trait: stuckType === 'cant_start' ? 'needs_starter' : 'needs_direction',
-      trait_strength: 0.6,
-    }).catch((err) => {
+    const { error: observationError } = await supabase
+      .from('behavioral_observations')
+      .insert({
+        session_id: sessionId,
+        student_id: user.id,
+        behavior_type: 'scaffold_usage',
+        faculty_observed: 'imagination', // Scaffold usage indicates imagination/creativity needs support
+        observation_data: {
+          stuckType,
+          contentLengthAtRequest: currentContent.length,
+          scaffoldType: scaffold.scaffoldType,
+        },
+        behavioral_trait: stuckType === 'cant_start' ? 'needs_starter' : 'needs_direction',
+        trait_strength: 0.6,
+      });
+    if (observationError) {
       // Log but don't fail the request - observation is non-critical
-      console.warn('Failed to record scaffold usage observation:', err);
-    });
+      console.warn('Failed to record scaffold usage observation:', observationError);
+    }
 
     return NextResponse.json({
       success: true,

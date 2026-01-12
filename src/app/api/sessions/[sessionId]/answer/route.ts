@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { createAdminSupabaseClient } from '@/lib/db/supabase';
+import { createAdminSupabaseClient, Database } from '@/lib/db/supabase';
 import { dispatchToAgent, type Subject } from '@/lib/agents';
 import { z } from 'zod';
 import type { QuestionWithAnswer } from '@/types';
@@ -11,6 +11,12 @@ const answerSchema = z.object({
   selectedOptionId: z.string().uuid(),
   timeSpentSeconds: z.number().min(0).max(3600),
 });
+
+type QuestionWithHints = Database['public']['Tables']['questions']['Row'] & {
+  pattern_hints: Database['public']['Tables']['pattern_hints']['Row'][];
+  mnemonics: Database['public']['Tables']['mnemonics']['Row'][];
+  socratic_hints: Database['public']['Tables']['socratic_hints']['Row'][];
+};
 
 // POST /api/sessions/[sessionId]/answer - Submit answer
 export async function POST(
@@ -33,7 +39,7 @@ export async function POST(
     const supabase = createAdminSupabaseClient();
 
     // Get user
-    const { data: user } = await supabase
+    const { data: user }: { data: { id: string, display_name: string } | null } = await supabase
       .from('users')
       .select('id, display_name')
       .eq('clerk_id', userId)
@@ -47,7 +53,7 @@ export async function POST(
     }
 
     // Get the session
-    const { data: session, error: sessionError } = await supabase
+    const { data: session, error: sessionError }: { data: Database['public']['Tables']['learning_sessions']['Row'] | null, error: any } = await supabase
       .from('learning_sessions')
       .select('*')
       .eq('id', sessionId)
@@ -80,7 +86,7 @@ export async function POST(
 
     // Get the full question with answer info
     // Include subject-specific related data
-    const { data: question } = await supabase
+    const { data: question }: { data: QuestionWithHints | null } = await supabase
       .from('questions')
       .select(
         isMath
@@ -100,7 +106,7 @@ export async function POST(
     // DISTRACTOR ENGINEERING: Get answer options for the current tier
     // This includes the trap_explanation for targeted feedback
     const currentTier = session.max_tier_reached || 1;
-    let { data: answerOptions } = await supabase
+    let { data: answerOptions }: { data: Database['public']['Tables']['answer_options']['Row'][] | null } = await supabase
       .from('answer_options')
       .select('*')
       .eq('question_id', questionId)
@@ -109,7 +115,7 @@ export async function POST(
 
     // Fall back to tier 1 if no options for current tier
     if (!answerOptions || answerOptions.length === 0) {
-      const { data: fallbackOptions } = await supabase
+      const { data: fallbackOptions }: { data: Database['public']['Tables']['answer_options']['Row'][] | null } = await supabase
         .from('answer_options')
         .select('*')
         .eq('question_id', questionId)
@@ -149,7 +155,7 @@ export async function POST(
         topicId: question.topic_id,
         domain: question.domain || 'multiplication',
         questionText: question.question_text,
-        questionType: question.question_type,
+        questionType: question.question_type as any,
         difficultyTier: currentTier as 1 | 2 | 3 | 4,
         options: answerOptions.map((o: any) => ({
           id: o.id,
@@ -175,7 +181,7 @@ export async function POST(
         id: question.id,
         topicId: question.topic_id,
         questionText: question.question_text,
-        questionType: question.question_type,
+        questionType: question.question_type as any,
         difficultyTier: currentTier,
         cognitiveVerb: question.cognitive_verb || '',
         questionStem: question.question_stem || '',
@@ -330,7 +336,17 @@ export async function POST(
           wisdomProgress: (sessionUpdate.wisdom_correct as number) || session.wisdom_correct || 0,
         };
 
-    const response = {
+    const response: {
+      success: true;
+      data: {
+        feedback: typeof feedback;
+        sessionState: typeof sessionState;
+        sessionEnded: boolean;
+        tierChanged: boolean;
+        tierDirection: 'up' | 'down' | null;
+        sessionSummary?: Record<string, unknown>;
+      };
+    } = {
       success: true,
       data: {
         feedback,

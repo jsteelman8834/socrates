@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { createAdminSupabaseClient } from '@/lib/db/supabase';
+import { createAdminSupabaseClient, Database } from '@/lib/db/supabase';
 
 // GET /api/sessions/[sessionId]/question - Get next question
 //
@@ -58,10 +58,11 @@ export async function GET(
     // Alternate between question types based on subject
     // History: knowledge/wisdom (2-way rotation)
     // Math: fluency/concept/problem_solving (3-way rotation)
-    let preferType: string;
+    type QuestionType = Database['public']['Tables']['questions']['Row']['question_type'];
+    let preferType: QuestionType;
     if (isMath) {
-      const mathTypes = ['fluency', 'concept', 'problem_solving'];
-      preferType = mathTypes[session.questions_attempted % 3];
+      const mathTypes: QuestionType[] = ['fluency', 'concept', 'problem_solving'];
+      preferType = mathTypes[session.questions_attempted % mathTypes.length];
     } else {
       preferType = session.questions_attempted % 2 === 0 ? 'knowledge' : 'wisdom';
     }

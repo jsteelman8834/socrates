@@ -71,11 +71,11 @@ export async function POST(request: NextRequest) {
         // Create student profile
         await supabase.from('student_profiles').insert({
           user_id: user.id,
-          grade_level: 5,
           knowledge_rating: 1000,
           wisdom_rating: 1000,
+          overall_rating: 1000,
           total_xp: 0,
-          level: 1,
+          current_level: 1,
         });
 
         break;
@@ -99,6 +99,9 @@ export async function POST(request: NextRequest) {
 
       case 'user.deleted': {
         const { id } = evt.data;
+        if (!id) {
+          break;
+        }
 
         // Get user ID
         const { data: user } = await supabase
